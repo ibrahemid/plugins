@@ -72,7 +72,7 @@ Triggers must be concrete user-phrases ("audit my UI", "convert to HTML"), not c
 
 1. After authoring: invoke `plugin-dev:plugin-validator` agent.
 2. For skills: invoke `plugin-dev:skill-reviewer` agent.
-3. Install locally: `/plugin install <name>@ibrahemid-plugins`.
+3. Install locally: `/plugin install <name>@ibrahemid`.
 4. Run the happy path in a fresh CC session and verify.
 5. Bump `version` in both `plugin.json` and `marketplace.json` entry on every change.
 
