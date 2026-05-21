@@ -6,6 +6,12 @@
   <a href="https://ibrahemid.github.io/plugins/">Live gallery</a>
 </p>
 
+<p align="center">
+  <a href="https://ibrahemid.github.io/plugins/to-html/">
+    <img src="./plugins/to-html/docs/screenshots/thumb-plan.png" alt="to-html — Claude Code reply rendered as a live plan dashboard" width="900">
+  </a>
+</p>
+
 ## Install
 
 ```

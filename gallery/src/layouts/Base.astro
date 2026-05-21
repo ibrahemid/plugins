@@ -5,6 +5,7 @@ interface Props {
 }
 const { title = 'plugins', description = 'Claude Code plugins.' } = Astro.props;
 const baseUrl = import.meta.env.BASE_URL;
+const rootUrl = baseUrl.replace(/\/$/, '') || '/';
 ---
 <!doctype html>
 <html lang="en">
@@ -15,83 +16,152 @@ const baseUrl = import.meta.env.BASE_URL;
   <meta property="og:title" content={title}>
   <meta property="og:description" content={description}>
   <meta property="og:type" content="website">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300..900;1,300..900&family=JetBrains+Mono:wght@400;500;700&display=swap">
   <title>{title}</title>
   <style is:global>
     :root {
-      color-scheme: light dark;
-      --bg: #f9f8f4;
-      --bg-elev: #ffffff;
-      --bg-sunken: #f1f0eb;
-      --fg: #1a1a1a;
-      --fg-muted: #5b5b5b;
-      --fg-faint: #8a8a8a;
-      --accent: #6d28d9;
-      --accent-soft: rgba(109, 40, 217, 0.08);
-      --accent-line: rgba(109, 40, 217, 0.2);
-      --border: #e6e4dd;
-      --border-strong: #d2cfc5;
-      --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-      --mono: ui-monospace, "JetBrains Mono", "Fira Code", "SF Mono", Menlo, Consolas, monospace;
+      --paper: #f5efe1;
+      --paper-tint: #ece4d0;
+      --ink: #1f1a14;
+      --ink-muted: #6b6357;
+      --ink-faint: #a89e8a;
+      --rule: #d8cfb8;
+      --rule-soft: #e6dfc9;
+      --accent: #b8742f;
+      --accent-deep: #8a5520;
+      --accent-soft: rgba(184, 116, 47, 0.08);
+      --accent-line: rgba(184, 116, 47, 0.22);
+      --serif: "Crimson Pro", "Iowan Old Style", "Charter", "Georgia", serif;
+      --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
     }
     @media (prefers-color-scheme: dark) {
       :root {
-        --bg: #0e0e10;
-        --bg-elev: #17171a;
-        --bg-sunken: #0a0a0c;
-        --fg: #ededf0;
-        --fg-muted: #a9a9b0;
-        --fg-faint: #6e6e75;
-        --accent: #c4b5fd;
-        --accent-soft: rgba(196, 181, 253, 0.10);
-        --accent-line: rgba(196, 181, 253, 0.28);
-        --border: #26262b;
-        --border-strong: #3a3a40;
+        --paper: #1a1612;
+        --paper-tint: #221d17;
+        --ink: #ede5d3;
+        --ink-muted: #978c79;
+        --ink-faint: #5e5648;
+        --rule: #2e2820;
+        --rule-soft: #28221c;
+        --accent: #d99752;
+        --accent-deep: #b3742f;
+        --accent-soft: rgba(217, 151, 82, 0.10);
+        --accent-line: rgba(217, 151, 82, 0.28);
       }
     }
     * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
     html, body {
       margin: 0; padding: 0;
-      background: var(--bg);
-      color: var(--fg);
-      font-family: var(--sans);
-      font-size: 16px;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--serif);
+      font-size: 19px;
       line-height: 1.6;
       -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+      font-feature-settings: "kern", "liga", "onum";
     }
-    a { color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--accent-line); transition: border-color 120ms; }
-    a:hover { border-bottom-color: var(--accent); }
-    code { font-family: var(--mono); font-size: 0.875em; background: var(--bg-sunken); padding: 1px 6px; border-radius: 4px; border: 1px solid var(--border); }
-    .container { max-width: 1100px; margin: 0 auto; padding: 64px 32px; }
-    .site-head { padding-bottom: 32px; border-bottom: 1px solid var(--border); margin-bottom: 48px; }
-    .site-title { font-size: 0.875rem; font-family: var(--mono); color: var(--fg-muted); margin: 0 0 4px; letter-spacing: 0.04em; text-transform: uppercase; }
-    .site-tag { font-size: 1.875rem; font-weight: 700; letter-spacing: -0.02em; margin: 0; max-width: 720px; }
-    .site-nav { display: flex; gap: 18px; margin-top: 24px; font-size: 0.875rem; }
-    .site-nav a { border-bottom: none; color: var(--fg-muted); }
-    .site-nav a:hover { color: var(--fg); }
-    .site-foot { margin-top: 96px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 0.8125rem; color: var(--fg-faint); display: flex; justify-content: space-between; }
+    ::selection { background: var(--accent-soft); color: var(--ink); }
+    a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--accent); transition: color 160ms ease, border-color 160ms ease; }
+    a:hover { color: var(--accent); border-bottom-color: var(--accent-deep); }
+    code, pre { font-family: var(--mono); }
+    code {
+      font-size: 0.84em;
+      background: var(--accent-soft);
+      padding: 1px 6px;
+      border-radius: 2px;
+      color: var(--ink);
+      font-feature-settings: "ss01";
+    }
+    pre {
+      background: var(--ink);
+      color: var(--paper);
+      padding: 18px 22px;
+      overflow-x: auto;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      border-radius: 0;
+      margin: 0;
+    }
+    pre code { background: transparent; color: inherit; padding: 0; }
+    hr { border: none; border-top: 1px solid var(--rule); margin: 64px 0; }
+
+    .page {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 32px 48px 96px;
+    }
+    .masthead {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      padding: 16px 0 24px;
+      border-bottom: 1px solid var(--ink);
+      margin-bottom: 80px;
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--ink);
+    }
+    .masthead .left { display: flex; gap: 28px; align-items: baseline; }
+    .masthead .nameplate {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 1.05rem;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+    .masthead .vol { color: var(--ink-muted); }
+    .masthead nav { display: flex; gap: 22px; }
+    .masthead nav a { border-bottom: none; color: var(--ink-muted); }
+    .masthead nav a:hover { color: var(--accent); }
+
+    .colophon {
+      margin-top: 96px;
+      padding-top: 18px;
+      border-top: 1px solid var(--rule);
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--ink-faint);
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .colophon a { border-bottom: none; color: var(--ink-muted); }
+    .colophon a:hover { color: var(--accent); }
+
     @media (max-width: 720px) {
-      .container { padding: 40px 20px; }
-      .site-tag { font-size: 1.5rem; }
+      html, body { font-size: 17px; }
+      .page { padding: 16px 22px 64px; }
+      .masthead { flex-direction: column; gap: 12px; align-items: flex-start; margin-bottom: 56px; }
+      .masthead .left { flex-direction: column; gap: 4px; }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <header class="site-head">
-      <p class="site-title">plugins</p>
-      <h1 class="site-tag"><slot name="tagline">Claude Code plugins.</slot></h1>
-      <nav class="site-nav">
-        <a href={baseUrl}>Plugins</a>
+  <div class="page">
+    <header class="masthead">
+      <div class="left">
+        <span class="nameplate"><a href={rootUrl} style="border-bottom:none;color:var(--ink);">plugins</a></span>
+        <span class="vol">Vol. 1 · Claude Code</span>
+      </div>
+      <nav>
+        <a href={rootUrl}>Index</a>
         <a href="https://github.com/ibrahemid/plugins">Source</a>
         <a href="https://github.com/ibrahemid/plugins/issues">Issues</a>
       </nav>
     </header>
-    <main>
-      <slot />
-    </main>
-    <footer class="site-foot">
-      <span>MIT licensed.</span>
-      <span>Built with <a href="https://astro.build">Astro</a>.</span>
+    <main><slot /></main>
+    <footer class="colophon">
+      <span>MIT · No telemetry · No deps</span>
+      <span>Set in Crimson Pro &amp; JetBrains Mono</span>
     </footer>
   </div>
 </body>
