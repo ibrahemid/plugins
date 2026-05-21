@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+<title>How the rate limiter works</title>
+<style>:root {
+  color-scheme: light dark;
+  --bg: #f9f8f4;
+  --bg-elev: #ffffff;
+  --bg-sunken: #f1f0eb;
+  --fg: #1a1a1a;
+  --fg-muted: #5b5b5b;
+  --fg-faint: #8a8a8a;
+  --accent: #6d28d9;
+  --accent-soft: rgba(109, 40, 217, 0.08);
+  --accent-line: rgba(109, 40, 217, 0.2);
+  --border: #e6e4dd;
+  --border-strong: #d2cfc5;
+  --code-bg: #f1efea;
+  --code-fg: #1a1a1a;
+  --serif: "Iowan Old Style", "Charter", "Apple Garamond", "Georgia", "Times New Roman", serif;
+  --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "JetBrains Mono", "Fira Code", "SF Mono", Menlo, Consolas, monospace;
+  --radius-sm: 4px;
+  --radius: 8px;
+  --radius-lg: 14px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0e0e10;
+    --bg-elev: #17171a;
+    --bg-sunken: #0a0a0c;
+    --fg: #ededf0;
+    --fg-muted: #a9a9b0;
+    --fg-faint: #6e6e75;
+    --accent: #c4b5fd;
+    --accent-soft: rgba(196, 181, 253, 0.10);
+    --accent-line: rgba(196, 181, 253, 0.28);
+    --border: #26262b;
+    --border-strong: #3a3a40;
+    --code-bg: #1a1a1f;
+    --code-fg: #ededf0;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--fg);
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid var(--accent-line);
+  transition: border-color 120ms ease;
+}
+a:hover { border-bottom-color: var(--accent); }
+
+code {
+  font-family: var(--mono);
+  font-size: 0.875em;
+  background: var(--code-bg);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+pre {
+  background: var(--code-bg);
+  color: var(--code-fg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  overflow-x: auto;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+pre code { background: transparent; padding: 0; font-size: inherit; }
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1.2em 0;
+  font-size: 0.9375rem;
+}
+th, td {
+  text-align: left;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+th {
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fg-muted);
+}
+
+hr {
+  border: none;
+  height: 1px;
+  background: var(--border);
+  margin: 2.4em 0;
+}
+
+blockquote {
+  margin: 1.2em 0;
+  padding: 4px 0 4px 20px;
+  border-left: 2px solid var(--accent-line);
+  color: var(--fg-muted);
+  font-style: italic;
+}
+
+.cc-stamp {
+  position: fixed;
+  top: 16px;
+  right: 20px;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  color: var(--fg-faint);
+  letter-spacing: 0.04em;
+  z-index: 10;
+}
+
+body.tpl-exp {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 64px 32px 96px;
+}
+
+.tpl-exp .exp-head h1 {
+  margin: 0 0 24px;
+  font-family: var(--sans);
+  font-size: 2.25rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+  max-width: 720px;
+}
+
+.tpl-exp .tldr {
+  margin: 0 0 40px;
+  padding: 20px 24px;
+  background: var(--accent-soft);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  max-width: 720px;
+}
+
+.tpl-exp .tldr-label {
+  display: inline-block;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.tpl-exp .tldr-body { font-size: 1rem; line-height: 1.65; color: var(--fg); }
+.tpl-exp .tldr-body p:first-child { margin-top: 0; }
+.tpl-exp .tldr-body p:last-child { margin-bottom: 0; }
+
+.tpl-exp .exp-shell {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 48px;
+  align-items: start;
+}
+
+.tpl-exp .exp-toc {
+  position: sticky;
+  top: 32px;
+  align-self: start;
+  font-size: 0.875rem;
+}
+
+.tpl-exp .exp-toc h2 {
+  margin: 0 0 12px;
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--fg-muted);
+  font-weight: 700;
+}
+
+.tpl-exp .exp-toc ol {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  counter-reset: toc;
+}
+
+.tpl-exp .exp-toc li {
+  counter-increment: toc;
+}
+
+.tpl-exp .exp-toc a {
+  display: block;
+  padding: 6px 10px;
+  color: var(--fg-muted);
+  text-decoration: none;
+  border-bottom: none;
+  border-left: 2px solid transparent;
+  transition: color 120ms, border-color 120ms, background 120ms;
+}
+
+.tpl-exp .exp-toc a::before {
+  content: counter(toc, decimal-leading-zero);
+  margin-right: 10px;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  color: var(--fg-faint);
+}
+
+.tpl-exp .exp-toc a:hover,
+.tpl-exp .exp-toc a.active {
+  color: var(--fg);
+  border-left-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.tpl-exp .exp-body {
+  font-size: 1.0625rem;
+  line-height: 1.7;
+  max-width: 680px;
+}
+
+.tpl-exp .exp-body h2 {
+  font-size: 1.5rem;
+  margin: 2.4em 0 0.5em;
+  padding-top: 0;
+  letter-spacing: -0.015em;
+  font-weight: 700;
+}
+
+.tpl-exp .exp-body h2:first-child { margin-top: 0; }
+
+.tpl-exp .exp-body h3 {
+  font-size: 1.0625rem;
+  margin: 1.8em 0 0.4em;
+  color: var(--fg);
+  font-weight: 600;
+}
+
+.tpl-exp .exp-body p { margin: 0.9em 0; }
+
+.tpl-exp .exp-body details {
+  margin: 1.2em 0;
+  padding: 14px 18px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.tpl-exp .exp-body summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.tpl-exp .exp-body details[open] summary { margin-bottom: 8px; }
+
+.tpl-exp .exp-body table {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin: 1.6em 0;
+}
+
+.tpl-exp .exp-body strong { font-weight: 700; }
+.tpl-exp .exp-body em { font-style: italic; color: var(--fg-muted); }
+
+.tpl-exp .exp-body ul li::marker { color: var(--accent); }
+
+@media (max-width: 880px) {
+  .tpl-exp .exp-shell { grid-template-columns: 1fr; }
+  .tpl-exp .exp-toc { position: static; }
+}
+</style>
+</head>
+<body class="tpl-exp">
+<div class="cc-stamp">gallery</div>
+<header class="exp-head"><h1>How the rate limiter works</h1></header>
+<aside class="tldr"><span class="tldr-label">TL;DR</span><div class="tldr-body"><p>token-bucket per business, refilled by a cron every 10 seconds, enforced in NestJS middleware before any business logic runs.</p>
+</div></aside>
+<div class="exp-shell">
+  <nav class="exp-toc" aria-label="On this page">
+  <h2>On this page</h2>
+  <ol><li><a href="#s-1-the-bucket">The bucket</a></li><li><a href="#s-2-the-middleware">The middleware</a></li><li><a href="#s-3-the-refiller">The refiller</a></li><li><a href="#s-4-gotchas">Gotchas</a></li></ol>
+</nav>
+  <article class="exp-body"><h2>The bucket</h2>
+<p></p>
+<p>Each business has a Mongo document holding <code>tokens</code> and <code>lastRefilledAt</code>. Default capacity is 100, default refill rate 10 per second. The capacity and rate are configurable per business via the admin panel.</p>
+<h2>The middleware</h2>
+<p></p>
+<p>Reads the bucket on every request. If <code>tokens &gt;= cost</code>, atomically deducts via <code>findOneAndUpdate({ _id, tokens: { $gte: cost } }, { $inc: { tokens: -cost } })</code> and proceeds. If the condition fails, returns 429 with <code>Retry-After</code> computed from the refill rate.</p>
+<h2>The refiller</h2>
+<p></p>
+<p>A cron job runs every 10 seconds. It tops up any bucket that hasn&#39;t hit capacity, capped at the bucket&#39;s max. Uses the same atomic <code>findOneAndUpdate</code> so concurrent middleware deductions don&#39;t lose increments.</p>
+<h2>Gotchas</h2>
+<p></p>
+<p>Clock skew between app pods can cause one pod&#39;s middleware to deduct before another pod&#39;s refiller cron lands. The drift is bounded by the cron interval and we accept it — the worst case is a 429 that should have been a 200, which the client retry handles.</p>
+<p>For burst traffic above capacity, the bucket goes negative; the next refill cycle brings it back. We considered hard-limiting at zero but the current behavior is simpler and works at our scale.</p>
+</article>
+</div>
+
+</body>
+</html>

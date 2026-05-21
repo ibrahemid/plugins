@@ -1,0 +1,173 @@
+---
+import Base from '../../layouts/Base.astro';
+const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, '');
+const exBase = `${baseUrl}/examples/to-html`;
+
+const templates = [
+  {
+    id: 'prose',
+    name: 'prose',
+    tag: 'editorial typography',
+    description: 'Default for substantive prose with no special structure. Clean, narrow column. No chrome.',
+    href: `${exBase}/prose.html`,
+    trigger: 'Anything substantive that doesn\'t match another template.'
+  },
+  {
+    id: 'plan',
+    name: 'plan',
+    tag: 'phase sidebar · live status · focus checkboxes',
+    description: 'Triggered by phase headings or three-plus checkbox tasks. Auto-reloads every 3 seconds and updates task statuses as you discuss them in plain English.',
+    href: `${exBase}/plan.html`,
+    trigger: '## Phase N: or three-plus [ ] tasks.'
+  },
+  {
+    id: 'comparison',
+    name: 'comparison',
+    tag: 'side-by-side · pros / cons · pick + reason',
+    description: 'Two or three options side-by-side. Click a card to pick it, type a one-line reason, copy as a prompt for Claude.',
+    href: `${exBase}/comparison.html`,
+    trigger: 'Two-plus ## Option / ## Approach headings.'
+  },
+  {
+    id: 'explainer',
+    name: 'explainer',
+    tag: 'TL;DR pill · sticky TOC',
+    description: 'For "explain X" responses. TL;DR pill at the top, sticky table of contents on the side, prose body in a comfortable reading column.',
+    href: `${exBase}/explainer.html`,
+    trigger: 'TL;DR keyword or multi-section structure with little bulleting.'
+  }
+];
+---
+<Base title="to-html — gallery" description="Live, interactive examples of the to-html plugin templates.">
+  <Fragment slot="tagline">
+    <code style="font-size: inherit; background: transparent; border: none; padding: 0; color: var(--accent);">/to-html</code>
+    — HTML rendering mode for Claude Code.
+  </Fragment>
+
+  <p class="lede">
+    Type <code>/to-html</code> once. Every substantive reply gets classified and rendered with the right template. Trivial replies
+    skip. Click any preview below to interact with the actual rendered output — these are the real HTML files the plugin produces.
+  </p>
+
+  <pre class="install-cmd">/plugin marketplace add ibrahemid/plugins
+/plugin install to-html@ibrahemid</pre>
+
+  {templates.map((t) => (
+    <section id={t.id} class="example">
+      <header class="example-head">
+        <h2 class="example-name">{t.name}</h2>
+        <p class="example-tag">{t.tag}</p>
+        <p class="example-desc">{t.description}</p>
+        <p class="example-trigger"><strong>Triggers on:</strong> <code>{t.trigger}</code></p>
+        <a class="example-open" href={t.href} target="_blank" rel="noopener">Open full size →</a>
+      </header>
+      <div class="example-frame">
+        <iframe src={t.href} title={`${t.name} example`} loading="lazy"></iframe>
+      </div>
+    </section>
+  ))}
+
+  <section class="how">
+    <h2>How it works</h2>
+    <p>
+      A <code>Stop</code> hook on every Claude Code turn reads the assistant's reply, runs a deterministic classifier
+      (no LLM tokens spent), and dispatches to one of the templates above. A second hook on <code>ExitPlanMode</code> always
+      renders the plan as a live dashboard. The renderer is plain Node; the only third-party dependency is a vendored copy of
+      <a href="https://github.com/markedjs/marked">marked</a>.
+    </p>
+    <p>
+      Output files are written to your OS cache directory — never into your project tree. The CSP on every artifact is:
+      <code>default-src 'none'; style-src 'unsafe-inline'; img-src data:; script-src 'unsafe-inline'</code>. No network, no remote
+      assets, no forms.
+    </p>
+  </section>
+</Base>
+
+<style>
+  .lede {
+    font-size: 1.0625rem;
+    color: var(--fg-muted);
+    max-width: 720px;
+    margin: 0 0 24px;
+    line-height: 1.65;
+  }
+  .install-cmd {
+    display: inline-block;
+    padding: 12px 18px;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: var(--mono);
+    font-size: 0.875rem;
+    color: var(--fg);
+    margin: 0 0 56px;
+    white-space: pre-wrap;
+  }
+  .example {
+    margin-bottom: 80px;
+    scroll-margin-top: 24px;
+  }
+  .example-head {
+    margin-bottom: 20px;
+  }
+  .example-name {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .example-name::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    background: var(--accent);
+    border-radius: 999px;
+    margin-right: 12px;
+    transform: translateY(-4px);
+  }
+  .example-tag {
+    margin: 4px 0 12px;
+    color: var(--accent);
+    font-size: 0.875rem;
+  }
+  .example-desc {
+    margin: 0 0 12px;
+    color: var(--fg-muted);
+    max-width: 720px;
+    line-height: 1.6;
+  }
+  .example-trigger {
+    margin: 0 0 16px;
+    font-size: 0.8125rem;
+    color: var(--fg-muted);
+  }
+  .example-open {
+    font-size: 0.8125rem;
+    font-family: var(--mono);
+  }
+  .example-frame {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--bg-elev);
+    height: 680px;
+  }
+  .example-frame iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    display: block;
+  }
+  .how {
+    margin-top: 48px;
+    padding: 24px 28px;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .how h2 { margin: 0 0 12px; font-size: 1.125rem; }
+  .how p { margin: 0 0 12px; color: var(--fg-muted); line-height: 1.65; font-size: 0.9375rem; }
+  .how p:last-child { margin-bottom: 0; }
+</style>

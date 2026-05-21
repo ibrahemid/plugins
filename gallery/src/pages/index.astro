@@ -1,0 +1,152 @@
+---
+import Base from '../layouts/Base.astro';
+const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+const plugins = [
+  {
+    name: 'to-html',
+    href: `${baseUrl}/to-html`,
+    tagline: 'HTML rendering mode for Claude Code.',
+    summary: 'Type /to-html. The next substantive reply opens in your browser. Plans, comparisons, and explainers get bespoke templates. Trivial replies skip.',
+    install: '/plugin install to-html@ibrahemid',
+    badges: ['Stop hook', 'PostToolUse hook', 'Node 18+']
+  },
+  {
+    name: 'sesh',
+    href: 'https://github.com/ibrahemid/plugins/tree/main/plugins/sesh',
+    tagline: 'Auto-name Claude Code sessions.',
+    summary: 'Silent UserPromptSubmit hook that names the session after a few user messages based on conversation context.',
+    install: '/plugin install sesh@ibrahemid',
+    badges: ['UserPromptSubmit hook']
+  }
+];
+---
+<Base title="ibrahemid / plugins" description="Claude Code plugins by ibrahemid. Live, interactive examples.">
+  <p class="lede">Install with one line. Each plugin links to live, interactive examples.</p>
+
+  <pre class="install-cmd">/plugin marketplace add ibrahemid/plugins</pre>
+
+  <section class="grid">
+    {plugins.map((p) => (
+      <a class="card" href={p.href}>
+        <h2 class="card-name">{p.name}</h2>
+        <p class="card-tag">{p.tagline}</p>
+        <p class="card-summary">{p.summary}</p>
+        <code class="card-install">{p.install}</code>
+        <ul class="badges">
+          {p.badges.map((b) => <li>{b}</li>)}
+        </ul>
+      </a>
+    ))}
+  </section>
+
+  <section class="thariq">
+    <h2>Why HTML?</h2>
+    <p>
+      Thariq Shihipar made the case in <a href="https://thariqs.github.io/html-effectiveness/">The Unreasonable Effectiveness of HTML</a>:
+      markdown linearizes everything the agent wants to express. Tables, comparisons, mockups, interactivity — all flattened.
+    </p>
+    <p>
+      <code>to-html</code> takes that argument seriously without forcing it on every reply. Toggle it on, and the Stop hook quietly
+      decides which template fits each reply. Trivial replies get nothing. Plans get a phase sidebar with live status. Comparisons
+      get pickers. Explainers get a TOC. Nothing leaves your machine.
+    </p>
+  </section>
+</Base>
+
+<style>
+  .lede {
+    font-size: 1.125rem;
+    color: var(--fg-muted);
+    max-width: 640px;
+    margin: 0 0 24px;
+  }
+  .install-cmd {
+    display: inline-block;
+    padding: 12px 18px;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: var(--mono);
+    font-size: 0.875rem;
+    color: var(--fg);
+    margin: 0 0 48px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 16px;
+  }
+  .card {
+    display: block;
+    padding: 24px;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--fg);
+    transition: border-color 200ms ease, transform 200ms ease;
+  }
+  .card:hover {
+    border-color: var(--border-strong);
+    transform: translateY(-1px);
+  }
+  .card-name {
+    font-size: 1.25rem;
+    margin: 0 0 4px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .card-tag {
+    margin: 0 0 12px;
+    color: var(--accent);
+    font-size: 0.875rem;
+  }
+  .card-summary {
+    margin: 0 0 16px;
+    font-size: 0.9375rem;
+    color: var(--fg-muted);
+    line-height: 1.55;
+  }
+  .card-install {
+    display: block;
+    margin-bottom: 16px;
+    font-size: 0.8125rem;
+  }
+  .badges {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .badges li {
+    font-size: 0.6875rem;
+    font-family: var(--mono);
+    color: var(--fg-muted);
+    padding: 2px 8px;
+    background: var(--bg-sunken);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+  }
+  .thariq {
+    margin-top: 64px;
+    padding: 24px 28px;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .thariq h2 {
+    margin: 0 0 12px;
+    font-size: 1.125rem;
+    font-weight: 700;
+  }
+  .thariq p {
+    margin: 0 0 12px;
+    font-size: 0.9375rem;
+    color: var(--fg-muted);
+    line-height: 1.65;
+  }
+  .thariq p:last-child { margin-bottom: 0; }
+</style>

@@ -1,0 +1,633 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+<title>Auth library for the new dashboard</title>
+<style>:root {
+  color-scheme: light dark;
+  --bg: #f9f8f4;
+  --bg-elev: #ffffff;
+  --bg-sunken: #f1f0eb;
+  --fg: #1a1a1a;
+  --fg-muted: #5b5b5b;
+  --fg-faint: #8a8a8a;
+  --accent: #6d28d9;
+  --accent-soft: rgba(109, 40, 217, 0.08);
+  --accent-line: rgba(109, 40, 217, 0.2);
+  --border: #e6e4dd;
+  --border-strong: #d2cfc5;
+  --code-bg: #f1efea;
+  --code-fg: #1a1a1a;
+  --serif: "Iowan Old Style", "Charter", "Apple Garamond", "Georgia", "Times New Roman", serif;
+  --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "JetBrains Mono", "Fira Code", "SF Mono", Menlo, Consolas, monospace;
+  --radius-sm: 4px;
+  --radius: 8px;
+  --radius-lg: 14px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0e0e10;
+    --bg-elev: #17171a;
+    --bg-sunken: #0a0a0c;
+    --fg: #ededf0;
+    --fg-muted: #a9a9b0;
+    --fg-faint: #6e6e75;
+    --accent: #c4b5fd;
+    --accent-soft: rgba(196, 181, 253, 0.10);
+    --accent-line: rgba(196, 181, 253, 0.28);
+    --border: #26262b;
+    --border-strong: #3a3a40;
+    --code-bg: #1a1a1f;
+    --code-fg: #ededf0;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--fg);
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid var(--accent-line);
+  transition: border-color 120ms ease;
+}
+a:hover { border-bottom-color: var(--accent); }
+
+code {
+  font-family: var(--mono);
+  font-size: 0.875em;
+  background: var(--code-bg);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+pre {
+  background: var(--code-bg);
+  color: var(--code-fg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  overflow-x: auto;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+pre code { background: transparent; padding: 0; font-size: inherit; }
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1.2em 0;
+  font-size: 0.9375rem;
+}
+th, td {
+  text-align: left;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+th {
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fg-muted);
+}
+
+hr {
+  border: none;
+  height: 1px;
+  background: var(--border);
+  margin: 2.4em 0;
+}
+
+blockquote {
+  margin: 1.2em 0;
+  padding: 4px 0 4px 20px;
+  border-left: 2px solid var(--accent-line);
+  color: var(--fg-muted);
+  font-style: italic;
+}
+
+.cc-stamp {
+  position: fixed;
+  top: 16px;
+  right: 20px;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  color: var(--fg-faint);
+  letter-spacing: 0.04em;
+  z-index: 10;
+}
+
+body.tpl-cmp {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 64px 40px 96px;
+}
+
+.tpl-cmp .cmp-head {
+  margin-bottom: 40px;
+  max-width: 720px;
+}
+
+.tpl-cmp .cmp-head h1 {
+  margin: 0 0 12px;
+  font-family: var(--sans);
+  font-size: 2.25rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+}
+
+.tpl-cmp .preamble {
+  font-size: 1rem;
+  color: var(--fg-muted);
+  line-height: 1.65;
+}
+
+.tpl-cmp .cmp-grid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  align-items: stretch;
+}
+
+.tpl-cmp .cmp-grid[data-options="2"] { grid-template-columns: 1fr 1fr; }
+.tpl-cmp .cmp-grid[data-options="3"] { grid-template-columns: 1fr 1fr 1fr; }
+
+@media (max-width: 900px) {
+  .tpl-cmp .cmp-grid[data-options="3"] { grid-template-columns: 1fr; }
+}
+@media (max-width: 720px) {
+  .tpl-cmp .cmp-grid { grid-template-columns: 1fr; }
+}
+
+.tpl-cmp .opt {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: border-color 200ms ease, transform 200ms ease;
+}
+
+.tpl-cmp .opt:hover {
+  border-color: var(--border-strong);
+}
+
+.tpl-cmp .opt-head {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tpl-cmp .opt-pick {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.tpl-cmp .opt-pick input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+  margin: 0;
+  cursor: pointer;
+}
+
+.tpl-cmp .opt-index {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 120ms, color 120ms;
+}
+
+.tpl-cmp .opt:has(input[type="radio"]:checked) {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent-line);
+}
+
+.tpl-cmp .opt:has(input[type="radio"]:checked) .opt-index {
+  background: var(--accent);
+  color: white;
+}
+
+.tpl-cmp .opt {
+  cursor: pointer;
+}
+
+.tpl-cmp .opt-title h2 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.tpl-cmp .rec-badge {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 8px;
+  background: var(--accent);
+  color: white;
+  border-radius: 999px;
+}
+
+.tpl-cmp .opt-body {
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  color: var(--fg);
+  flex: 1;
+}
+
+.tpl-cmp .opt-body p { margin: 0.5em 0; }
+.tpl-cmp .opt-body p:first-child { margin-top: 0; }
+
+.tpl-cmp .opt-body h3 { font-size: 0.875rem; margin: 1em 0 0.25em; color: var(--fg-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+.tpl-cmp .opt-body code {
+  font-size: 0.8125rem;
+}
+
+.tpl-cmp .opt-body pre {
+  font-size: 0.75rem;
+  padding: 12px 14px;
+}
+
+.tpl-cmp .hints {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.tpl-cmp .hint {
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.tpl-cmp .hint-pros {
+  background: rgba(16, 185, 129, 0.08);
+}
+.tpl-cmp .hint-cons {
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.tpl-cmp .hint-label {
+  display: block;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 6px;
+}
+
+.tpl-cmp .hint-pros .hint-label { color: rgb(5, 150, 105); }
+.tpl-cmp .hint-cons .hint-label { color: rgb(220, 38, 38); }
+
+@media (prefers-color-scheme: dark) {
+  .tpl-cmp .hint-pros { background: rgba(16, 185, 129, 0.15); }
+  .tpl-cmp .hint-cons { background: rgba(239, 68, 68, 0.15); }
+  .tpl-cmp .hint-pros .hint-label { color: rgb(110, 231, 183); }
+  .tpl-cmp .hint-cons .hint-label { color: rgb(252, 165, 165); }
+}
+
+.tpl-cmp .hint ul {
+  margin: 0;
+  padding-left: 16px;
+}
+
+.tpl-cmp .hint li { margin: 2px 0; }
+
+.tpl-cmp .effort {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  font-size: 0.8125rem;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+
+.tpl-cmp .effort .effort-value {
+  font-family: var(--mono);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.tpl-cmp .decision-bar {
+  position: sticky;
+  bottom: 16px;
+  margin-top: 32px;
+  padding: 14px 20px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04);
+}
+
+.tpl-cmp .decision-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.tpl-cmp .decision-pick {
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.tpl-cmp #pick-reason {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 0.875rem;
+}
+
+.tpl-cmp #pick-reason:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.tpl-cmp .decision-bar button {
+  background: var(--accent);
+  color: white;
+  border: none;
+  padding: 10px 18px;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 120ms, opacity 120ms;
+}
+
+.tpl-cmp .decision-bar button:hover:not(:disabled) { filter: brightness(1.1); }
+.tpl-cmp .decision-bar button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tpl-cmp #copy-status {
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+  color: var(--fg-muted);
+}
+</style>
+</head>
+<body class="tpl-cmp">
+<div class="cc-stamp">gallery</div>
+<header class="cmp-head"><h1>Auth library for the new dashboard</h1><div class="preamble"><p>Three real candidates. Pick on what you optimize for. All would work.</p>
+</div></header>
+<section class="cmp-grid" data-options="3"><article class="opt" data-option-id="opt-a" data-option-label="Clerk">
+  <header class="opt-head">
+    <label class="opt-pick" title="Pick this option">
+      <input type="radio" name="pick-option" value="opt-a" data-option-label="Clerk">
+      <span class="opt-index">A</span>
+    </label>
+    <div class="opt-title">
+      <h2>Clerk<span class="rec-badge">Recommended</span></h2>
+    </div>
+  </header>
+  <div class="opt-body"><p>Managed service on the Vercel marketplace. Drop-in middleware, pre-built sign-in UI.</p>
+<ul>
+<li><p>Drop-in middleware, under an hour to wire up</p>
+</li>
+<li><p>Best DX of the three by a wide margin</p>
+</li>
+<li><p>Free up to 10k MAU</p>
+</li>
+<li><p>Vendor lock-in if you outgrow it</p>
+</li>
+<li><p>Pricing scales with MAU past the free tier</p>
+</li>
+</ul>
+<p>Recommended for speed.</p>
+</div>
+  <div class="hints"><div class="hint hint-pros"><span class="hint-label">Pros</span><ul><li>Drop-in middleware, under an hour to wire up</li><li>Best DX of the three by a wide margin</li><li>Free up to 10k MAU</li></ul></div><div class="hint hint-cons"><span class="hint-label">Cons</span><ul><li>Vendor lock-in if you outgrow it</li><li>Pricing scales with MAU past the free tier</li></ul></div></div>
+  <div class="effort"><span class="hint-label">Effort</span><span class="effort-value">1 day</span></div>
+</article>
+<article class="opt" data-option-id="opt-b" data-option-label="Auth0">
+  <header class="opt-head">
+    <label class="opt-pick" title="Pick this option">
+      <input type="radio" name="pick-option" value="opt-b" data-option-label="Auth0">
+      <span class="opt-index">B</span>
+    </label>
+    <div class="opt-title">
+      <h2>Auth0</h2>
+    </div>
+  </header>
+  <div class="opt-body"><p>Industry standard. More flexible than Clerk, more setup overhead.</p>
+<ul>
+<li><p>Mature, well-documented</p>
+</li>
+<li><p>Configurable to any auth flow</p>
+</li>
+<li><p>Heavier to integrate</p>
+</li>
+<li><p>More config surface area to learn</p>
+</li>
+</ul>
+</div>
+  <div class="hints"><div class="hint hint-pros"><span class="hint-label">Pros</span><ul><li>Mature, well-documented</li><li>Configurable to any auth flow</li></ul></div><div class="hint hint-cons"><span class="hint-label">Cons</span><ul><li>Heavier to integrate</li><li>More config surface area to learn</li></ul></div></div>
+  <div class="effort"><span class="hint-label">Effort</span><span class="effort-value">3 days</span></div>
+</article>
+<article class="opt" data-option-id="opt-c" data-option-label="NextAuth (self-hosted)">
+  <header class="opt-head">
+    <label class="opt-pick" title="Pick this option">
+      <input type="radio" name="pick-option" value="opt-c" data-option-label="NextAuth (self-hosted)">
+      <span class="opt-index">C</span>
+    </label>
+    <div class="opt-title">
+      <h2>NextAuth (self-hosted)</h2>
+    </div>
+  </header>
+  <div class="opt-body"><p>Fully owned, open-source, no SaaS in the loop.</p>
+<ul>
+<li><p>No vendor lock-in ever</p>
+</li>
+<li><p>Free, forever</p>
+</li>
+<li><p>Maintenance burden lands on you</p>
+</li>
+<li><p>Security responsibility on the team</p>
+</li>
+</ul>
+</div>
+  <div class="hints"><div class="hint hint-pros"><span class="hint-label">Pros</span><ul><li>No vendor lock-in ever</li><li>Free, forever</li></ul></div><div class="hint hint-cons"><span class="hint-label">Cons</span><ul><li>Maintenance burden lands on you</li><li>Security responsibility on the team</li></ul></div></div>
+  <div class="effort"><span class="hint-label">Effort</span><span class="effort-value">1-2 weeks</span></div>
+</article></section>
+<aside class="decision-bar" data-decision="comparison">
+  <div class="decision-info">
+    <span class="decision-pick" id="pick-label">Pick an option</span>
+    <input type="text" id="pick-reason" placeholder="Why? (optional one line)" maxlength="240">
+  </div>
+  <button type="button" id="copy-decision-btn" disabled>Copy as prompt</button>
+  <span id="copy-status" aria-live="polite"></span>
+</aside>
+<script>(function () {
+  'use strict';
+
+  function $(sel) { return document.querySelector(sel); }
+  function $$(sel) { return Array.from(document.querySelectorAll(sel)); }
+
+  function getPicked() {
+    var radio = document.querySelector('input[name="pick-option"]:checked');
+    if (!radio) return null;
+    return {
+      id: radio.value,
+      label: radio.getAttribute('data-option-label') || radio.value
+    };
+  }
+
+  function getReason() {
+    var input = $('#pick-reason');
+    return input ? input.value.trim() : '';
+  }
+
+  function refresh() {
+    var picked = getPicked();
+    var pickLabel = $('#pick-label');
+    var btn = $('#copy-decision-btn');
+    if (pickLabel) pickLabel.textContent = picked ? 'Going with: ' + picked.label : 'Pick an option';
+    if (btn) btn.disabled = !picked;
+  }
+
+  function buildPrompt() {
+    var picked = getPicked();
+    if (!picked) return null;
+    var reason = getReason();
+    var title = (document.querySelector('.cmp-head h1') || {}).textContent || 'this decision';
+    var lines = ['Go with **' + picked.label + '** for ' + title.trim() + '.'];
+    if (reason) {
+      lines.push('');
+      lines.push('Reason: ' + reason);
+    }
+    lines.push('');
+    lines.push('Proceed with implementation. Confirm any assumptions before writing code.');
+    return lines.join('\n');
+  }
+
+  function flashStatus(text, ms) {
+    var status = $('#copy-status');
+    if (!status) return;
+    status.textContent = text;
+    if (ms) {
+      setTimeout(function () {
+        if (status.textContent === text) status.textContent = '';
+      }, ms);
+    }
+  }
+
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'absolute';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (_) { ok = false; }
+    document.body.removeChild(ta);
+    return ok;
+  }
+
+  function copyDecision() {
+    var text = buildPrompt();
+    if (!text) {
+      flashStatus('Nothing picked.', 3000);
+      return;
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(
+        function () { flashStatus('Copied. Paste into Claude.', 4000); },
+        function () {
+          var ok = fallbackCopy(text);
+          flashStatus(ok ? 'Copied (fallback).' : 'Copy failed.', 4000);
+        }
+      );
+    } else {
+      var ok = fallbackCopy(text);
+      flashStatus(ok ? 'Copied (fallback).' : 'Copy failed.', 4000);
+    }
+  }
+
+  function wireOptionCardClick() {
+    $$('.opt').forEach(function (card) {
+      card.addEventListener('click', function (e) {
+        if (e.target.matches('input, label, button, a')) return;
+        var radio = card.querySelector('input[type="radio"]');
+        if (radio && !radio.checked) {
+          radio.checked = true;
+          radio.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      });
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    $$('input[name="pick-option"]').forEach(function (r) { r.addEventListener('change', refresh); });
+    var reason = $('#pick-reason');
+    if (reason) reason.addEventListener('input', refresh);
+    var btn = $('#copy-decision-btn');
+    if (btn) btn.addEventListener('click', copyDecision);
+    wireOptionCardClick();
+    refresh();
+  });
+})();
+</script>
+</body>
+</html>

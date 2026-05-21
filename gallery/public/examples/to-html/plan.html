@@ -1,0 +1,980 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="refresh" content="3">
+<meta name="cc-plan-id" content="plan-07a4b50918">
+<script type="application/json" id="plan-data">{"planId":"plan-07a4b50918","title":"Add Instagram messages","slug":"add-instagram-messages","phases":[{"id":"phase-6b665c78ff","title":"Phase 1: Config module","tasks":[{"id":"task-aca42466f3","text":"instagram-config.schema.ts with igBusinessId, pageId, accessToken, businessId","status":"pending"},{"id":"task-d4113241ad","text":"CRUD controller + service","status":"pending"},{"id":"task-1a7d004ab7","text":"OAuth callback for IG Business Login","status":"pending"},{"id":"task-d4bb001f0e","text":"Reuse Meta Embedded Signup with config_id scoped to instagram_basic, instagram_manage_messages, pages_messaging","status":"pending"}],"notes":["Mirror messenger."]},{"id":"phase-cda2faa6ba","title":"Phase 2: Webhook ingestion","tasks":[{"id":"task-5f847847b4","text":"Parse IG webhook payload (entry[].messaging[].sender.id, message.text, attachments)","status":"pending"},{"id":"task-5b4552767a","text":"Resolve businessId by matching entry.id against InstagramConfig","status":"pending"},{"id":"task-3ea0d8a908","text":"Normalize into existing Message schema with platform: INSTAGRAM","status":"pending"},{"id":"task-d3fa54435e","text":"Replace the no-op in webhook-event.dispatcher.ts:37 with instagramWebhookProcessor.process(body)","status":"pending"}],"notes":[]},{"id":"phase-6e05e640ca","title":"Phase 3: Outbound sender","tasks":[{"id":"task-92f6a6d150","text":"POST to graph.facebook.com/v21.0/{ig_user_id}/messages with recipient.id (IGSID) + message","status":"pending"},{"id":"task-7450fb5459","text":"Handle 24-hour messaging window — return platform error to caller, surface in UI","status":"pending"},{"id":"task-b0965df9bd","text":"Support text, media (image/video/audio), quick replies, generic templates","status":"pending"}],"notes":[]},{"id":"phase-42575a1756","title":"Phase 4: Frontend","tasks":[{"id":"task-8a1d5d4bf4","text":"/conversations — add Instagram filter chip, IG icon next to chat avatar","status":"pending"},{"id":"task-452c84905d","text":"/settings/instagram — new page mirroring /settings/whatsapp","status":"pending"},{"id":"task-233624634f","text":"Update useChatQueries to pass platform filter","status":"pending"},{"id":"task-235506df20","text":"Admin: /platforms — add Instagram column showing connected businesses","status":"pending"}],"notes":[]},{"id":"phase-dc378e95b0","title":"Phase 5: Env","tasks":[{"id":"task-9407252ff3","text":"Reuse META_APP_ID, META_APP_SECRET, META_VERIFY_TOKEN","status":"pending"},{"id":"task-2b5e41757a","text":"Add INSTAGRAM_CONFIG_ID (Embedded Signup flow ID)","status":"pending"}],"notes":[]}],"createdAt":"2026-05-21T11:08:24.634Z","source":"classifier"}</script>
+<title>Add Instagram messages</title>
+<style>:root {
+  color-scheme: light dark;
+  --bg: #f9f8f4;
+  --bg-elev: #ffffff;
+  --bg-sunken: #f1f0eb;
+  --fg: #1a1a1a;
+  --fg-muted: #5b5b5b;
+  --fg-faint: #8a8a8a;
+  --accent: #6d28d9;
+  --accent-soft: rgba(109, 40, 217, 0.08);
+  --accent-line: rgba(109, 40, 217, 0.2);
+  --border: #e6e4dd;
+  --border-strong: #d2cfc5;
+  --code-bg: #f1efea;
+  --code-fg: #1a1a1a;
+  --serif: "Iowan Old Style", "Charter", "Apple Garamond", "Georgia", "Times New Roman", serif;
+  --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "JetBrains Mono", "Fira Code", "SF Mono", Menlo, Consolas, monospace;
+  --radius-sm: 4px;
+  --radius: 8px;
+  --radius-lg: 14px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0e0e10;
+    --bg-elev: #17171a;
+    --bg-sunken: #0a0a0c;
+    --fg: #ededf0;
+    --fg-muted: #a9a9b0;
+    --fg-faint: #6e6e75;
+    --accent: #c4b5fd;
+    --accent-soft: rgba(196, 181, 253, 0.10);
+    --accent-line: rgba(196, 181, 253, 0.28);
+    --border: #26262b;
+    --border-strong: #3a3a40;
+    --code-bg: #1a1a1f;
+    --code-fg: #ededf0;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--fg);
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid var(--accent-line);
+  transition: border-color 120ms ease;
+}
+a:hover { border-bottom-color: var(--accent); }
+
+code {
+  font-family: var(--mono);
+  font-size: 0.875em;
+  background: var(--code-bg);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+pre {
+  background: var(--code-bg);
+  color: var(--code-fg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  overflow-x: auto;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+pre code { background: transparent; padding: 0; font-size: inherit; }
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1.2em 0;
+  font-size: 0.9375rem;
+}
+th, td {
+  text-align: left;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+th {
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fg-muted);
+}
+
+hr {
+  border: none;
+  height: 1px;
+  background: var(--border);
+  margin: 2.4em 0;
+}
+
+blockquote {
+  margin: 1.2em 0;
+  padding: 4px 0 4px 20px;
+  border-left: 2px solid var(--accent-line);
+  color: var(--fg-muted);
+  font-style: italic;
+}
+
+.cc-stamp {
+  position: fixed;
+  top: 16px;
+  right: 20px;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  color: var(--fg-faint);
+  letter-spacing: 0.04em;
+  z-index: 10;
+}
+
+body.tpl-plan {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 56px 32px 96px;
+}
+
+.tpl-plan .plan-head {
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tpl-plan .plan-head h1 {
+  margin: 0 0 20px;
+  font-family: var(--sans);
+  font-size: 2.25rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+}
+
+.tpl-plan .plan-summary {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.tpl-plan .summary-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.tpl-plan .summary-stat .num {
+  font-family: var(--mono);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.tpl-plan .summary-stat .lbl {
+  font-size: 0.75rem;
+  color: var(--fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.tpl-plan .summary-bar {
+  flex: 1;
+  height: 6px;
+  background: var(--bg-sunken);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.tpl-plan .summary-bar .fill {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), #a78bfa);
+  transition: width 240ms ease;
+}
+
+.tpl-plan .status-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 0.75rem;
+  color: var(--fg-muted);
+}
+
+.tpl-plan .legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tpl-plan .legend-item .glyph {
+  font-family: var(--mono);
+  font-size: 0.875rem;
+}
+
+.tpl-plan .st-pending .glyph, .tpl-plan .st-pending .status-glyph { color: var(--fg-faint); }
+.tpl-plan .st-in-progress .glyph, .tpl-plan .st-in-progress .status-glyph { color: #f59e0b; }
+.tpl-plan .st-completed .glyph, .tpl-plan .st-completed .status-glyph { color: #10b981; }
+.tpl-plan .st-failed .glyph, .tpl-plan .st-failed .status-glyph { color: #ef4444; }
+
+.tpl-plan .plan-shell {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 40px;
+  align-items: start;
+}
+
+.tpl-plan .plan-side {
+  position: sticky;
+  top: 32px;
+  align-self: start;
+}
+
+.tpl-plan .phase-toc h2 {
+  margin: 0 0 12px;
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--fg-muted);
+  font-weight: 700;
+}
+
+.tpl-plan .phase-toc ol {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tpl-plan .phase-toc a {
+  display: grid;
+  grid-template-columns: 20px 1fr;
+  column-gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  color: var(--fg);
+  font-size: 0.8125rem;
+  align-items: center;
+  border-bottom: none;
+  transition: background 120ms;
+}
+
+.tpl-plan .phase-toc a:hover { background: var(--accent-soft); }
+
+.tpl-plan .phase-toc .phase-index {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  color: var(--fg-muted);
+  text-align: center;
+}
+
+.tpl-plan .phase-toc .phase-name {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tpl-plan .phase-toc .phase-progress {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.625rem;
+  color: var(--fg-faint);
+  padding-left: 30px;
+}
+
+.tpl-plan .phase-toc .bar {
+  flex: 1;
+  height: 3px;
+  background: var(--bg-sunken);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.tpl-plan .phase-toc .bar .fill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+.tpl-plan .phase {
+  padding: 24px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  margin-bottom: 16px;
+}
+
+.tpl-plan .phase-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tpl-plan .phase-marker {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 0.875rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tpl-plan .phase-head h2 {
+  margin: 0;
+  flex: 1;
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+.tpl-plan .phase-stats {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--fg-muted);
+}
+
+.tpl-plan .phase-notes {
+  margin-bottom: 14px;
+  padding: 12px 16px;
+  background: var(--bg-sunken);
+  border-left: 2px solid var(--accent-line);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  font-size: 0.9375rem;
+}
+
+.tpl-plan .phase-notes :first-child { margin-top: 0; }
+.tpl-plan .phase-notes :last-child { margin-bottom: 0; }
+
+.tpl-plan .task-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tpl-plan .task {
+  display: grid;
+  grid-template-columns: 22px 22px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.9375rem;
+}
+
+.tpl-plan .task-focus {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.tpl-plan .task-focus-input {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--accent);
+  margin: 0;
+}
+
+.tpl-plan .task-text {
+  min-width: 0;
+}
+
+.tpl-plan .task-note-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--fg-muted);
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 0.875rem;
+  line-height: 1;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 120ms, color 120ms;
+}
+
+.tpl-plan .task-note-btn:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent-line);
+}
+
+.tpl-plan .task-note-input {
+  grid-column: 1 / -1;
+  margin-top: 6px;
+  width: 100%;
+  padding: 6px 10px;
+  background: var(--bg-elev);
+  color: var(--fg);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 0.875rem;
+}
+
+.tpl-plan .task-note-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.tpl-plan .task.st-completed {
+  background: rgba(16, 185, 129, 0.05);
+  border-color: rgba(16, 185, 129, 0.20);
+}
+
+.tpl-plan .task.st-completed .task-text {
+  color: var(--fg-muted);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+
+.tpl-plan .task.st-in-progress {
+  background: rgba(245, 158, 11, 0.05);
+  border-color: rgba(245, 158, 11, 0.25);
+}
+
+.tpl-plan .task.st-failed {
+  background: rgba(239, 68, 68, 0.05);
+  border-color: rgba(239, 68, 68, 0.25);
+}
+
+.tpl-plan .task .status-glyph {
+  font-family: var(--mono);
+  font-size: 1rem;
+  text-align: center;
+}
+
+.tpl-plan .decision-bar {
+  position: sticky;
+  bottom: 16px;
+  margin-top: 40px;
+  padding: 14px 20px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04);
+}
+
+.tpl-plan .decision-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.tpl-plan .decision-count {
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.tpl-plan .decision-hint {
+  font-size: 0.75rem;
+  color: var(--fg-muted);
+}
+
+.tpl-plan .decision-bar button {
+  background: var(--accent);
+  color: white;
+  border: none;
+  padding: 10px 18px;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 120ms ease, opacity 120ms ease;
+}
+
+.tpl-plan .decision-bar button:hover:not(:disabled) { filter: brightness(1.1); }
+.tpl-plan .decision-bar button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tpl-plan #copy-status {
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+  color: var(--fg-muted);
+}
+
+@media (max-width: 880px) {
+  .tpl-plan .plan-shell { grid-template-columns: 1fr; }
+  .tpl-plan .plan-side { position: static; }
+}
+</style>
+</head>
+<body class="tpl-plan">
+<div class="cc-stamp">gallery</div>
+<header class="plan-head">
+  <h1>Add Instagram messages</h1>
+  <div class="plan-summary">
+    <div class="summary-stat"><span class="num">0</span><span class="lbl">done</span></div>
+    <div class="summary-stat"><span class="num">17</span><span class="lbl">tasks</span></div>
+    <div class="summary-bar"><span class="fill" style="width:0%"></span></div>
+  </div>
+  <div class="status-legend"><span class="legend-item st-pending"><span class="glyph">◯</span> Pending</span><span class="legend-item st-in-progress"><span class="glyph">◐</span> In progress</span><span class="legend-item st-completed"><span class="glyph">●</span> Done</span><span class="legend-item st-failed"><span class="glyph">✕</span> Failed</span></div>
+</header>
+<div class="plan-shell">
+  <aside class="plan-side"><nav class="phase-toc">
+    <h2>Phases</h2>
+    <ol><li>
+      <a href="#phase-6b665c78ff">
+        <span class="phase-index">1</span>
+        <span class="phase-name">Phase 1: Config module</span>
+        <span class="phase-progress">
+          <span class="bar"><span class="fill" style="width:0%"></span></span>
+          <span class="ratio">0/4</span>
+        </span>
+      </a>
+    </li><li>
+      <a href="#phase-cda2faa6ba">
+        <span class="phase-index">2</span>
+        <span class="phase-name">Phase 2: Webhook ingestion</span>
+        <span class="phase-progress">
+          <span class="bar"><span class="fill" style="width:0%"></span></span>
+          <span class="ratio">0/4</span>
+        </span>
+      </a>
+    </li><li>
+      <a href="#phase-6e05e640ca">
+        <span class="phase-index">3</span>
+        <span class="phase-name">Phase 3: Outbound sender</span>
+        <span class="phase-progress">
+          <span class="bar"><span class="fill" style="width:0%"></span></span>
+          <span class="ratio">0/3</span>
+        </span>
+      </a>
+    </li><li>
+      <a href="#phase-42575a1756">
+        <span class="phase-index">4</span>
+        <span class="phase-name">Phase 4: Frontend</span>
+        <span class="phase-progress">
+          <span class="bar"><span class="fill" style="width:0%"></span></span>
+          <span class="ratio">0/4</span>
+        </span>
+      </a>
+    </li><li>
+      <a href="#phase-dc378e95b0">
+        <span class="phase-index">5</span>
+        <span class="phase-name">Phase 5: Env</span>
+        <span class="phase-progress">
+          <span class="bar"><span class="fill" style="width:0%"></span></span>
+          <span class="ratio">0/2</span>
+        </span>
+      </a>
+    </li></ol>
+  </nav></aside>
+  <main class="plan-main"><section class="phase" id="phase-6b665c78ff">
+    <header class="phase-head">
+      <div class="phase-marker">1</div>
+      <h2>Phase 1: Config module</h2>
+      <span class="phase-stats">0/4</span>
+    </header>
+    <div class="phase-notes"><div class="phase-note"><p>Mirror messenger.</p>
+</div></div>
+    <ul class="task-list"><li class="task st-pending" data-task-id="task-aca42466f3" data-status="pending" data-phase="Phase 1: Config module">
+    <label class="task-focus" title="Focus on this task in the next prompt">
+      <input type="checkbox" class="task-focus-input" data-task-id="task-aca42466f3" data-task-text="instagram-config.schema.ts with igBusinessId, pageId, accessToken, businessId" data-phase-title="Phase 1: Config module">
+    </label>
+    <span class="status-glyph">◯</span>
+    <span class="task-text">instagram-config.schema.ts with igBusinessId, pageId, accessToken, businessId</span>
+    <button type="button" class="task-note-btn" data-task-id="task-aca42466f3" aria-label="Add note" title="Add note">+</button>
+    <input type="text" class="task-note-input" data-task-id="task-aca42466f3" placeholder="note (optional)" hidden>
+  </li><li class="task st-pending" data-task-id="task-d4113241ad" data-status="pending" data-phase="Phase 1: Config module">
+    <label class="task-focus" title="Focus on this task in the next prompt">
+      <input type="checkbox" class="task-focus-input" data-task-id="task-d4113241ad" data-task-text="CRUD controller + service" data-phase-title="Phase 1: Config module">
+    </label>
+    <span class="status-glyph">◯</span>
+    <span class="task-text">CRUD controller + service</span>
+    <button type="button" class="task-note-btn" data-task-id="task-d4113241ad" aria-label="Add note" title="Add note">+</button>
+    <input type="text" class="task-note-input" data-task-id="task-d4113241ad" placeholder="note (optional)" hidden>
+  </li><li class="task st-pending" data-task-id="task-1a7d004ab7" data-status="pending" data-phase="Phase 1: Config module">
+    <label class="task-focus" title="Focus on this task in the next prompt">
+      <input type="checkbox" class="task-focus-input" data-task-id="task-1a7d004ab7" data-task-text="OAuth callback for IG Business Login" data-phase-title="Phase 1: Config module">
+    </label>
+    <span class="status-glyph">◯</span>
+    <span class="task-text">OAuth callback for IG Business Login</span>
+    <button type="button" class="task-note-btn" data-task-id="task-1a7d004ab7" aria-label="Add note" title="Add note">+</button>
+    <input type="text" class="task-note-input" data-task-id="task-1a7d004ab7" placeholder="note (optional)" hidden>
+  </li><li class="task st-pending" data-task-id="task-d4bb001f0e" data-status="pending" data-phase="Phase 1: Config module">
+    <label class="task-focus" title="Focus on this task in the next prompt">
+      <input type="checkbox" class="task-focus-input" data-task-id="task-d4bb001f0e" data-task-text="Reuse Meta Embedded Signup with config_id scoped to instagram_basic, instagram_manage_messages, pages_messaging" data-phase-title="Phase 1: Config module">
+    </label>
+    <span class="status-glyph">◯</span>
+    <span class="task-text">Reuse Meta Embedded Signup with config_id scoped to instagram_basic, instagram_manage_messages, pages_messaging</span>
+    <button type="button" class="task-note-btn" data-task-id="task-d4bb001f0e" aria-label="Add note" title="Add note">+</button>
+    <input type="text" class="task-note-input" data-task-id="task-d4bb001f0e" placeholder="note (optional)" hidden>
+  </li></ul>
+  </section>
+<section class="phase" id="phase-cda2faa6ba">
+    <header class="phase-head">
+      <div class="phase-marker">2</div>
+      <h2>Phase 2: Webhook ingestion</h2>
+      <span class="phase-stats">0/4</span>
+    </header>
+    
+    <ul class="task-list"><li class="task st-pending" data-task-id="task-5f847847b4" data-status="pending" data-phase="Phase 2: Webhook ingestion">
+    <label class="task-focus" title="Focus on this task in the next prompt">
+      <input type="checkbox" class="task-focus-input" data-task-id="task-5f847847b4" data-task-text="Parse IG webhook payload (entry[].messaging[].sender.id, message.text, attachments)" data-phase-title="Phase 2: Webhook ingestion">
+    </label>
+    <span class="status-glyph">◯</span>
+    <span class="task-text">Parse IG webhook payload (entry[].messaging[].sender.id, message.text, attachments)</span>
+    <button type="button" class="task-note-btn" data-task-id="task-5f847847b4" aria-label="Add note" title="Add note">+</button>
+    <input type="text" class="task-note-input" data-task-id="task-5f847847b4" placeholder="note (optional)" hidden>
+  </li><li class="task st-pending" data-task-id="task-5b4552767a" data-status="pending" data-phase="Phase 2: Webhook ingestion">
+    <label class="task-focus" title="Focus on this task in the next prompt">
+      <input type="checkbox" class="task-focus-input" data-task-id="task-5b4552767a" data-task-text="Resolve businessId by matching entry.id against InstagramConfig" data-phase-title="Phase 2: Webhook ingestion">
+    </label>
+    <span class="status-glyph">◯</span>
+    <span class="task-text">Resolve businessId by matching entry.id against InstagramConfig</span>
+    <button type="button" class="task-note-btn" data-task-id="task-5b4552767a" aria-label="Add note" title="Add note">+</button>
+    <input type="text" class="task-note-input" data-task-id="task-5b4552767a" placeholder="note (optional)" hidden>
+  </li><li class="task st-pending" data-task-id="task-3ea0d8a908" data-status="pending" data-phase="Phase 2: Webhook ingestion">
+    <label class="task-focus" title="Focus on this task in the next prompt">
+      <input type="checkbox" class="task-focus-input" data-task-id="task-3ea0d8a908" data-task-text="Normalize into existing Message schema with platform: INSTAGRAM" data-phase-title="Phase 2: Webhook ingestion">
+    </label>
+    <span class="status-glyph">◯</span>
+    <span class="task-text">Normalize into existing Message schema with platform: INSTAGRAM</span>
+    <button type="button" class="task-note-btn" data-task-id="task-3ea0d8a908" aria-label="Add note" title="Add note">+</button>
+    <input type="text" class="task-note-input" data-task-id="task-3ea0d8a908" placeholder="note (optional)" hidden>
+  </li><li class="task st-pending" data-task-id="task-d3fa54435e" data-status="pending" data-phase="Phase 2: Webhook ingestion">
+    <label class="task-focus" title="Focus on this task in the next prompt">
+      <input type="checkbox" class="task-focus-input" data-task-id="task-d3fa54435e" data-task-text="Replace the no-op in webhook-event.dispatcher.ts:37 with instagramWebhookProcessor.process(body)" data-phase-title="Phase 2: Webhook ingestion">
+    </label>
+    <span class="status-glyph">◯</span>
+    <span class="task-text">Replace the no-op in webhook-event.dispatcher.ts:37 with instagramWebhookProcessor.process(body)</span>
+    <button type="button" class="task-note-btn" data-task-id="task-d3fa54435e" aria-label="Add note" title="Add note">+</button>
+    <input type="text" class="task-note-input" data-task-id="task-d3fa54435e" placeholder="note (optional)" hidden>
+  </li></ul>
+  </section>
+<section class="phase" id="phase-6e05e640ca">
+    <header class="phase-head">
+      <div class="phase-marker">3</div>
+      <h2>Phase 3: Outbound sender</h2>
+      <span class="phase-stats">0/3</span>
+    </header>
+    
+    <ul class="task-list"><li class="task st-pending" data-task-id="task-92f6a6d150" data-status="pending" data-phase="Phase 3: Outbound sender">
+    <label class="task-focus" title="Focus on this task in the next prompt">
+      <input type="checkbox" class="task-focus-input" data-task-id="task-92f6a6d150" data-task-text="POST to graph.facebook.com/v21.0/{ig_user_id}/messages with recipient.id (IGSID) + message" data-phase-title="Phase 3: Outbound sender">
+    </label>
+    <span class="status-glyph">◯</span>
+    <span class="task-text">POST to graph.facebook.com/v21.0/{ig_user_id}/messages with recipient.id (IGSID) + message</span>
+    <button type="button" class="task-note-btn" data-task-id="task-92f6a6d150" aria-label="Add note" title="Add note">+</button>
+    <input type="text" class="task-note-input" data-task-id="task-92f6a6d150" placeholder="note (optional)" hidden>
+  </li><li class="task st-pending" data-task-id="task-7450fb5459" data-status="pending" data-phase="Phase 3: Outbound sender">
+    <label class="task-focus" title="Focus on this task in the next prompt">
+      <input type="checkbox" class="task-focus-input" data-task-id="task-7450fb5459" data-task-text="Handle 24-hour messaging window — return platform error to caller, surface in UI" data-phase-title="Phase 3: Outbound sender">
+    </label>
+    <span class="status-glyph">◯</span>
+    <span class="task-text">Handle 24-hour messaging window — return platform error to caller, surface in UI</span>
+    <button type="button" class="task-note-btn" data-task-id="task-7450fb5459" aria-label="Add note" title="Add note">+</button>
+    <input type="text" class="task-note-input" data-task-id="task-7450fb5459" placeholder="note (optional)" hidden>
+  </li><li class="task st-pending" data-task-id="task-b0965df9bd" data-status="pending" data-phase="Phase 3: Outbound sender">
+    <label class="task-focus" title="Focus on this task in the next prompt">
+      <input type="checkbox" class="task-focus-input" data-task-id="task-b0965df9bd" data-task-text="Support text, media (image/video/audio), quick replies, generic templates" data-phase-title="Phase 3: Outbound sender">
+    </label>
+    <span class="status-glyph">◯</span>
+    <span class="task-text">Support text, media (image/video/audio), quick replies, generic templates</span>
+    <button type="button" class="task-note-btn" data-task-id="task-b0965df9bd" aria-label="Add note" title="Add note">+</button>
+    <input type="text" class="task-note-input" data-task-id="task-b0965df9bd" placeholder="note (optional)" hidden>
+  </li></ul>
+  </section>
+<section class="phase" id="phase-42575a1756">
+    <header class="phase-head">
+      <div class="phase-marker">4</div>
+      <h2>Phase 4: Frontend</h2>
+      <span class="phase-stats">0/4</span>
+    </header>
+    
+    <ul class="task-list"><li class="task st-pending" data-task-id="task-8a1d5d4bf4" data-status="pending" data-phase="Phase 4: Frontend">
+    <label class="task-focus" title="Focus on this task in the next prompt">
+      <input type="checkbox" class="task-focus-input" data-task-id="task-8a1d5d4bf4" data-task-text="/conversations — add Instagram filter chip, IG icon next to chat avatar" data-phase-title="Phase 4: Frontend">
+    </label>
+    <span class="status-glyph">◯</span>
+    <span class="task-text">/conversations — add Instagram filter chip, IG icon next to chat avatar</span>
+    <button type="button" class="task-note-btn" data-task-id="task-8a1d5d4bf4" aria-label="Add note" title="Add note">+</button>
+    <input type="text" class="task-note-input" data-task-id="task-8a1d5d4bf4" placeholder="note (optional)" hidden>
+  </li><li class="task st-pending" data-task-id="task-452c84905d" data-status="pending" data-phase="Phase 4: Frontend">
+    <label class="task-focus" title="Focus on this task in the next prompt">
+      <input type="checkbox" class="task-focus-input" data-task-id="task-452c84905d" data-task-text="/settings/instagram — new page mirroring /settings/whatsapp" data-phase-title="Phase 4: Frontend">
+    </label>
+    <span class="status-glyph">◯</span>
+    <span class="task-text">/settings/instagram — new page mirroring /settings/whatsapp</span>
+    <button type="button" class="task-note-btn" data-task-id="task-452c84905d" aria-label="Add note" title="Add note">+</button>
+    <input type="text" class="task-note-input" data-task-id="task-452c84905d" placeholder="note (optional)" hidden>
+  </li><li class="task st-pending" data-task-id="task-233624634f" data-status="pending" data-phase="Phase 4: Frontend">
+    <label class="task-focus" title="Focus on this task in the next prompt">
+      <input type="checkbox" class="task-focus-input" data-task-id="task-233624634f" data-task-text="Update useChatQueries to pass platform filter" data-phase-title="Phase 4: Frontend">
+    </label>
+    <span class="status-glyph">◯</span>
+    <span class="task-text">Update useChatQueries to pass platform filter</span>
+    <button type="button" class="task-note-btn" data-task-id="task-233624634f" aria-label="Add note" title="Add note">+</button>
+    <input type="text" class="task-note-input" data-task-id="task-233624634f" placeholder="note (optional)" hidden>
+  </li><li class="task st-pending" data-task-id="task-235506df20" data-status="pending" data-phase="Phase 4: Frontend">
+    <label class="task-focus" title="Focus on this task in the next prompt">
+      <input type="checkbox" class="task-focus-input" data-task-id="task-235506df20" data-task-text="Admin: /platforms — add Instagram column showing connected businesses" data-phase-title="Phase 4: Frontend">
+    </label>
+    <span class="status-glyph">◯</span>
+    <span class="task-text">Admin: /platforms — add Instagram column showing connected businesses</span>
+    <button type="button" class="task-note-btn" data-task-id="task-235506df20" aria-label="Add note" title="Add note">+</button>
+    <input type="text" class="task-note-input" data-task-id="task-235506df20" placeholder="note (optional)" hidden>
+  </li></ul>
+  </section>
+<section class="phase" id="phase-dc378e95b0">
+    <header class="phase-head">
+      <div class="phase-marker">5</div>
+      <h2>Phase 5: Env</h2>
+      <span class="phase-stats">0/2</span>
+    </header>
+    
+    <ul class="task-list"><li class="task st-pending" data-task-id="task-9407252ff3" data-status="pending" data-phase="Phase 5: Env">
+    <label class="task-focus" title="Focus on this task in the next prompt">
+      <input type="checkbox" class="task-focus-input" data-task-id="task-9407252ff3" data-task-text="Reuse META_APP_ID, META_APP_SECRET, META_VERIFY_TOKEN" data-phase-title="Phase 5: Env">
+    </label>
+    <span class="status-glyph">◯</span>
+    <span class="task-text">Reuse META_APP_ID, META_APP_SECRET, META_VERIFY_TOKEN</span>
+    <button type="button" class="task-note-btn" data-task-id="task-9407252ff3" aria-label="Add note" title="Add note">+</button>
+    <input type="text" class="task-note-input" data-task-id="task-9407252ff3" placeholder="note (optional)" hidden>
+  </li><li class="task st-pending" data-task-id="task-2b5e41757a" data-status="pending" data-phase="Phase 5: Env">
+    <label class="task-focus" title="Focus on this task in the next prompt">
+      <input type="checkbox" class="task-focus-input" data-task-id="task-2b5e41757a" data-task-text="Add INSTAGRAM_CONFIG_ID (Embedded Signup flow ID)" data-phase-title="Phase 5: Env">
+    </label>
+    <span class="status-glyph">◯</span>
+    <span class="task-text">Add INSTAGRAM_CONFIG_ID (Embedded Signup flow ID)</span>
+    <button type="button" class="task-note-btn" data-task-id="task-2b5e41757a" aria-label="Add note" title="Add note">+</button>
+    <input type="text" class="task-note-input" data-task-id="task-2b5e41757a" placeholder="note (optional)" hidden>
+  </li></ul>
+  </section></main>
+</div>
+<aside class="decision-bar" data-decision="plan">
+  <div class="decision-info">
+    <span class="decision-count" id="focus-count">0 selected</span>
+    <span class="decision-hint">tick the tasks to focus on next, then copy a prompt for Claude</span>
+  </div>
+  <button type="button" id="copy-decision-btn" disabled>Copy as prompt</button>
+  <span id="copy-status" aria-live="polite"></span>
+</aside>
+<script>(function () {
+  'use strict';
+
+  function $(sel, root) { return (root || document).querySelector(sel); }
+  function $$(sel, root) { return Array.from((root || document).querySelectorAll(sel)); }
+
+  function refreshDecisionState() {
+    var inputs = $$('.task-focus-input');
+    var checked = inputs.filter(function (i) { return i.checked; });
+    var count = checked.length;
+    var label = count === 1 ? '1 selected' : count + ' selected';
+    var countEl = $('#focus-count');
+    if (countEl) countEl.textContent = label;
+    var btn = $('#copy-decision-btn');
+    if (btn) btn.disabled = count === 0;
+  }
+
+  function wireFocusInputs() {
+    $$('.task-focus-input').forEach(function (input) {
+      input.addEventListener('change', refreshDecisionState);
+    });
+    refreshDecisionState();
+  }
+
+  function wireNoteButtons() {
+    $$('.task-note-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var taskId = btn.getAttribute('data-task-id');
+        var noteInput = $('.task-note-input[data-task-id="' + taskId + '"]');
+        if (!noteInput) return;
+        noteInput.hidden = !noteInput.hidden;
+        btn.textContent = noteInput.hidden ? '+' : '−';
+        if (!noteInput.hidden) noteInput.focus();
+      });
+    });
+  }
+
+  function planTitle() {
+    var meta = document.querySelector('meta[name="cc-plan-id"]');
+    var h1 = document.querySelector('.plan-head h1');
+    return {
+      title: h1 ? h1.textContent.trim() : 'Plan',
+      planId: meta ? meta.content : ''
+    };
+  }
+
+  function buildPrompt() {
+    var info = planTitle();
+    var focused = $$('.task-focus-input:checked').map(function (input) {
+      var taskId = input.getAttribute('data-task-id');
+      var text = input.getAttribute('data-task-text') || '';
+      var phase = input.getAttribute('data-phase-title') || '';
+      var noteInput = $('.task-note-input[data-task-id="' + taskId + '"]');
+      var note = noteInput && !noteInput.hidden && noteInput.value
+        ? noteInput.value.trim()
+        : '';
+      return { phase: phase, text: text, note: note };
+    });
+    if (focused.length === 0) return null;
+
+    var byPhase = {};
+    focused.forEach(function (t) {
+      if (!byPhase[t.phase]) byPhase[t.phase] = [];
+      byPhase[t.phase].push(t);
+    });
+
+    var lines = [];
+    lines.push('Focus on these tasks from the "' + info.title + '" plan next. Skip the rest for now.');
+    lines.push('');
+    Object.keys(byPhase).forEach(function (phase) {
+      if (phase) lines.push('### ' + phase);
+      byPhase[phase].forEach(function (t) {
+        var line = '- ' + t.text;
+        if (t.note) line += ' (' + t.note + ')';
+        lines.push(line);
+      });
+      lines.push('');
+    });
+    return lines.join('\n').trim();
+  }
+
+  function flashStatus(text, ms) {
+    var status = $('#copy-status');
+    if (!status) return;
+    status.textContent = text;
+    if (ms) {
+      setTimeout(function () {
+        if (status.textContent === text) status.textContent = '';
+      }, ms);
+    }
+  }
+
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'absolute';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (_) { ok = false; }
+    document.body.removeChild(ta);
+    return ok;
+  }
+
+  function copyDecision() {
+    var text = buildPrompt();
+    if (!text) {
+      flashStatus('Nothing selected.', 3000);
+      return;
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(
+        function () { flashStatus('Copied. Paste into Claude.', 4000); },
+        function () {
+          var ok = fallbackCopy(text);
+          flashStatus(ok ? 'Copied (fallback).' : 'Copy failed.', 4000);
+        }
+      );
+    } else {
+      var ok = fallbackCopy(text);
+      flashStatus(ok ? 'Copied (fallback).' : 'Copy failed.', 4000);
+    }
+  }
+
+  function preserveScrollAcrossReloads() {
+    var KEY = 'cc-to-html-plan-scroll-' + ((document.querySelector('meta[name="cc-plan-id"]') || {}).content || 'p');
+    try {
+      var stored = sessionStorage.getItem(KEY);
+      if (stored !== null) window.scrollTo(0, Number(stored) || 0);
+    } catch (_) {}
+    window.addEventListener('scroll', function () {
+      try { sessionStorage.setItem(KEY, String(window.scrollY)); } catch (_) {}
+    }, { passive: true });
+  }
+
+  function preserveDecisionAcrossReloads() {
+    var KEY = 'cc-to-html-plan-focus-' + ((document.querySelector('meta[name="cc-plan-id"]') || {}).content || 'p');
+    try {
+      var stored = JSON.parse(sessionStorage.getItem(KEY) || '{}');
+      Object.keys(stored.focus || {}).forEach(function (id) {
+        var input = $('.task-focus-input[data-task-id="' + id + '"]');
+        if (input) input.checked = true;
+      });
+      Object.keys(stored.notes || {}).forEach(function (id) {
+        var inp = $('.task-note-input[data-task-id="' + id + '"]');
+        var btn = $('.task-note-btn[data-task-id="' + id + '"]');
+        if (inp && stored.notes[id]) {
+          inp.value = stored.notes[id];
+          inp.hidden = false;
+          if (btn) btn.textContent = '−';
+        }
+      });
+    } catch (_) {}
+
+    function save() {
+      var focus = {};
+      $$('.task-focus-input:checked').forEach(function (i) { focus[i.getAttribute('data-task-id')] = 1; });
+      var notes = {};
+      $$('.task-note-input').forEach(function (i) {
+        if (!i.hidden && i.value) notes[i.getAttribute('data-task-id')] = i.value;
+      });
+      try { sessionStorage.setItem(KEY, JSON.stringify({ focus: focus, notes: notes })); } catch (_) {}
+    }
+
+    document.addEventListener('change', save);
+    document.addEventListener('input', save);
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    wireFocusInputs();
+    wireNoteButtons();
+    preserveScrollAcrossReloads();
+    preserveDecisionAcrossReloads();
+    var btn = $('#copy-decision-btn');
+    if (btn) btn.addEventListener('click', copyDecision);
+    refreshDecisionState();
+  });
+})();
+</script>
+</body>
+</html>

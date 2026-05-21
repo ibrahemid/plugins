@@ -10,3 +10,7 @@ claude-mem/
 
 plugins/*/node_modules/
 plugins/*/dist/
+
+gallery/node_modules/
+gallery/dist/
+gallery/.astro/

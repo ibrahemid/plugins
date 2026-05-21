@@ -1,0 +1,59 @@
+name: Deploy gallery to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'gallery/**'
+      - 'plugins/to-html/lib/**'
+      - 'plugins/to-html/assets/**'
+      - 'plugins/to-html/vendor/**'
+      - '.github/workflows/deploy-gallery.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: gallery/package-lock.json
+
+      - name: Install gallery deps
+        run: npm ci
+        working-directory: gallery
+
+      - name: Build
+        run: npm run build
+        working-directory: gallery
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: gallery/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
