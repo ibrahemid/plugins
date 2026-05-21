@@ -11,9 +11,9 @@
   "plugins": [
     {
       "name": "to-html",
-      "version": "0.3.0",
+      "version": "1.0.0",
       "source": "./plugins/to-html",
-      "description": "Toggle HTML rendering for Claude Code. `/to-html` flips it on; every reply also writes a self-contained HTML file.",
+      "description": "Content-aware HTML rendering for Claude Code. `/to-html` toggles it on; every substantive reply is classified and rendered with the right template (plan, comparison, explainer, prose). Trivial replies are skipped.",
       "keywords": ["html", "output", "rendering", "artifact", "plan-mode"]
     },
     {
