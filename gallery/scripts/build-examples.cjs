@@ -38,7 +38,8 @@ function main() {
     { name: 'prose', file: 'prose.md' },
     { name: 'plan', file: 'plan.md' },
     { name: 'comparison', file: 'comparison.md' },
-    { name: 'explainer', file: 'explainer.md' }
+    { name: 'explainer', file: 'explainer.md' },
+    { name: 'diagram', file: 'diagram.md' }
   ];
 
   for (const c of cases) {

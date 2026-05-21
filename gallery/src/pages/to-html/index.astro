@@ -6,16 +6,16 @@ const examples = `${baseUrl}/examples/to-html`;
 
 const templates = [
   {
-    id: 'prose',
+    id: 'diagram',
     n: '01',
-    name: 'prose',
-    tag: 'editorial typography',
-    trigger: 'Default for anything substantive with no special structure.',
-    body: 'Narrow column. Big drop into the first paragraph. No chrome. The point is to actually read the thing — paragraphs, code, tables — without a "we made this safe!" footer eating space.',
-    thumb: `${shots}/thumb-prose.png`,
-    full: `${shots}/tpl-prose.png`,
-    live: `${examples}/prose.html`,
-    decision: 'No copy button. Read-only.'
+    name: 'diagram',
+    tag: 'interactive module map · hover to trace · click to focus',
+    trigger: 'A fenced ```mermaid block with graph TD or graph LR syntax.',
+    body: 'Mermaid graph syntax is parsed server-side, laid out topologically, and rendered as pure SVG. Hover a node to dim the rest and trace its callers and callees; click to lock the focus. No mermaid runtime — the diagram ships as plain SVG inside the artifact.',
+    thumb: `${shots}/thumb-diagram.png`,
+    full: `${shots}/tpl-diagram.png`,
+    live: `${examples}/diagram.html`,
+    decision: 'Hover and click to explore. Open the live artifact for the full interaction.'
   },
   {
     id: 'plan',
@@ -52,6 +52,18 @@ const templates = [
     full: `${shots}/tpl-explainer.png`,
     live: `${examples}/explainer.html`,
     decision: 'No copy button. Read-only.'
+  },
+  {
+    id: 'prose',
+    n: '05',
+    name: 'prose',
+    tag: 'editorial typography · drop cap · roman-numeral sections',
+    trigger: 'Anything substantive that doesn\'t match another template.',
+    body: 'The default. Set in Iowan Old Style with old-style numerals; ochre drop cap; section headings prefixed with Roman numerals in the left margin; small caps on follow-up paragraphs; asterism between sections; a final ❦. The point is to actually want to read the thing.',
+    thumb: `${shots}/thumb-prose.png`,
+    full: `${shots}/tpl-prose.png`,
+    live: `${examples}/prose.html`,
+    decision: 'No copy button. Read-only.'
   }
 ];
 ---
@@ -59,7 +71,7 @@ const templates = [
 
   <section class="hero">
     <p class="kicker">to-html · specimen sheet</p>
-    <h1 class="head">Five templates.<br>One toggle.</h1>
+    <h1 class="head">Six templates.<br>One toggle.</h1>
     <p class="dek">
       Type <code>/to-html</code> once. Every substantive reply is classified server-side
       and rendered into the template that fits the content. Below: every template,
@@ -88,7 +100,7 @@ const templates = [
         </li>
       ))}
       <li class="toc-skip">
-        <span class="toc-n">05</span>
+        <span class="toc-n">06</span>
         <span class="toc-name">skip</span>
         <span class="toc-tag">under 240 chars, no structure — no artifact at all</span>
       </li>

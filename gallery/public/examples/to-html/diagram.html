@@ -1,0 +1,568 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+<title>Webhook ingestion flow</title>
+<style>:root {
+  color-scheme: light dark;
+  --bg: #f9f8f4;
+  --bg-elev: #ffffff;
+  --bg-sunken: #f1f0eb;
+  --fg: #1a1a1a;
+  --fg-muted: #5b5b5b;
+  --fg-faint: #8a8a8a;
+  --accent: #6d28d9;
+  --accent-soft: rgba(109, 40, 217, 0.08);
+  --accent-line: rgba(109, 40, 217, 0.2);
+  --border: #e6e4dd;
+  --border-strong: #d2cfc5;
+  --code-bg: #f1efea;
+  --code-fg: #1a1a1a;
+  --serif: "Iowan Old Style", "Charter", "Apple Garamond", "Georgia", "Times New Roman", serif;
+  --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "JetBrains Mono", "Fira Code", "SF Mono", Menlo, Consolas, monospace;
+  --radius-sm: 4px;
+  --radius: 8px;
+  --radius-lg: 14px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0e0e10;
+    --bg-elev: #17171a;
+    --bg-sunken: #0a0a0c;
+    --fg: #ededf0;
+    --fg-muted: #a9a9b0;
+    --fg-faint: #6e6e75;
+    --accent: #c4b5fd;
+    --accent-soft: rgba(196, 181, 253, 0.10);
+    --accent-line: rgba(196, 181, 253, 0.28);
+    --border: #26262b;
+    --border-strong: #3a3a40;
+    --code-bg: #1a1a1f;
+    --code-fg: #ededf0;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--fg);
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid var(--accent-line);
+  transition: border-color 120ms ease;
+}
+a:hover { border-bottom-color: var(--accent); }
+
+code {
+  font-family: var(--mono);
+  font-size: 0.875em;
+  background: var(--code-bg);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+pre {
+  background: var(--code-bg);
+  color: var(--code-fg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  overflow-x: auto;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+pre code { background: transparent; padding: 0; font-size: inherit; }
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1.2em 0;
+  font-size: 0.9375rem;
+}
+th, td {
+  text-align: left;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+th {
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fg-muted);
+}
+
+hr {
+  border: none;
+  height: 1px;
+  background: var(--border);
+  margin: 2.4em 0;
+}
+
+blockquote {
+  margin: 1.2em 0;
+  padding: 4px 0 4px 20px;
+  border-left: 2px solid var(--accent-line);
+  color: var(--fg-muted);
+  font-style: italic;
+}
+
+.cc-stamp {
+  position: fixed;
+  top: 16px;
+  right: 20px;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  color: var(--fg-faint);
+  letter-spacing: 0.04em;
+  z-index: 10;
+}
+
+body.tpl-dgm {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 64px 40px 96px;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+.tpl-dgm .dgm-head {
+  margin-bottom: 32px;
+  max-width: 720px;
+}
+
+.tpl-dgm .dgm-kicker {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 12px;
+}
+
+.tpl-dgm .dgm-head h1 {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: 2.5rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+}
+
+.tpl-dgm .dgm-body {
+  max-width: 720px;
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  color: var(--fg-muted);
+  margin-bottom: 32px;
+}
+
+.tpl-dgm .dgm-body p { margin: 0.8em 0; }
+.tpl-dgm .dgm-body p:first-child { margin-top: 0; }
+
+.tpl-dgm .dgm-figures {
+  display: flex;
+  flex-direction: column;
+  gap: 56px;
+}
+
+.tpl-dgm .diagram {
+  margin: 0;
+}
+
+.tpl-dgm .diagram-canvas {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 32px;
+  overflow: auto;
+  position: relative;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 0 0 1px rgba(0,0,0,0.02) inset;
+}
+
+.tpl-dgm .diagram-canvas::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(0,0,0,0.07) 1px, transparent 1px);
+  background-size: 22px 22px;
+  background-position: 0 0;
+  opacity: 0.5;
+  border-radius: inherit;
+}
+
+@media (prefers-color-scheme: dark) {
+  .tpl-dgm .diagram-canvas::before {
+    background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.06) 1px, transparent 1px);
+  }
+}
+
+.tpl-dgm .diagram-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-height: 320px;
+  max-height: 760px;
+  position: relative;
+  z-index: 1;
+}
+
+.tpl-dgm .node {
+  cursor: pointer;
+  transition: opacity 200ms ease, transform 220ms cubic-bezier(.2,.7,.2,1);
+  outline: none;
+}
+
+.tpl-dgm .node-shape {
+  fill: var(--bg);
+  stroke: var(--fg-muted);
+  stroke-width: 1.5;
+  transition: fill 220ms ease, stroke 220ms ease, transform 220ms ease, filter 220ms ease;
+  filter: drop-shadow(0 1px 0 rgba(0,0,0,0.04));
+}
+
+.tpl-dgm .node-label {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  fill: var(--fg);
+  pointer-events: none;
+  user-select: none;
+}
+
+.tpl-dgm .node:hover .node-shape,
+.tpl-dgm .node:focus .node-shape {
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+.tpl-dgm .edge-line {
+  stroke: var(--fg-faint);
+  stroke-width: 1.5;
+  fill: none;
+  transition: stroke 220ms ease, stroke-width 220ms ease, opacity 220ms ease;
+}
+
+.tpl-dgm .arrow-head {
+  fill: var(--fg-faint);
+  transition: fill 220ms ease;
+}
+
+.tpl-dgm .edge-label {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  fill: var(--fg-muted);
+  pointer-events: none;
+  user-select: none;
+  paint-order: stroke;
+  stroke: var(--bg-elev);
+  stroke-width: 4;
+  stroke-linejoin: round;
+}
+
+/* Dimmed state when something is highlighted */
+.tpl-dgm .diagram.has-focus .node:not(.is-active) .node-shape { fill: var(--bg-elev); opacity: 0.45; }
+.tpl-dgm .diagram.has-focus .node:not(.is-active) .node-label { opacity: 0.4; }
+.tpl-dgm .diagram.has-focus .edge:not(.is-active) .edge-line { opacity: 0.18; }
+.tpl-dgm .diagram.has-focus .edge:not(.is-active) .edge-label { opacity: 0.18; }
+
+.tpl-dgm .node.is-active .node-shape {
+  fill: var(--accent-soft);
+  stroke: var(--accent);
+  stroke-width: 2;
+  filter: drop-shadow(0 2px 8px rgba(184, 116, 47, 0.20));
+}
+.tpl-dgm .node.is-active .node-label { fill: var(--fg); font-weight: 700; }
+
+.tpl-dgm .edge.is-active .edge-line {
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+.tpl-dgm .edge.is-active .arrow-head { fill: var(--accent); }
+.tpl-dgm .edge.is-active .edge-label { fill: var(--accent); }
+
+.tpl-dgm .diagram-meta {
+  margin: 16px 0 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+  font-family: var(--mono);
+}
+
+.tpl-dgm .diagram-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.tpl-dgm .diagram-stat .num {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.tpl-dgm .diagram-stat .lbl {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--fg-muted);
+}
+
+.tpl-dgm .diagram-hint {
+  font-size: 0.78rem;
+  color: var(--fg-faint);
+}
+
+@media (max-width: 720px) {
+  body.tpl-dgm { padding: 40px 20px 80px; }
+  .tpl-dgm .diagram-canvas { padding: 18px; }
+}
+</style>
+</head>
+<body class="tpl-dgm">
+<div class="cc-stamp">gallery</div>
+<header class="dgm-head">
+  <p class="dgm-kicker">Module map</p>
+  <h1>Webhook ingestion flow</h1>
+</header>
+<section class="dgm-body"><p>The accept-fast, process-durably path. Meta gets a <code>200</code> before any business logic runs; retries are owned by the worker, not Meta. The dispatcher routes by platform — Instagram lands on a no-op until the IG processor exists.</p>
+<p>Hover any service to trace its callers and callees. Click to pin the focus.</p>
+</section>
+<section class="dgm-figures"><figure class="diagram" data-diagram-index="0">
+      <div class="diagram-canvas"><svg viewBox="0 0 1906 624" preserveAspectRatio="xMidYMid meet" class="diagram-svg" role="img" aria-label="Module map">
+  <defs>
+    <marker id="arrow" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M 1 1 L 11 6 L 1 11 z" class="arrow-head" />
+    </marker>
+  </defs>
+  <g class="edges"><g class="edge" data-edge-id="e0" data-from="Meta" data-to="Controller">
+      <path d="M 213 108 C 253 108, 253 108, 293 108" class="edge-line" marker-end="url(#arrow)" fill="none" />
+      
+    </g>
+<g class="edge" data-edge-id="e1" data-from="Controller" data-to="Repo">
+      <path d="M 455 108 C 597.5 108, 597.5 108, 740 108" class="edge-line" marker-end="url(#arrow)" fill="none" />
+      
+    </g>
+<g class="edge" data-edge-id="e2" data-from="Repo" data-to="Mongo">
+      <path d="M 939 108 C 979 108, 979 108, 1019 108" class="edge-line" marker-end="url(#arrow)" fill="none" />
+      
+    </g>
+<g class="edge" data-edge-id="e3" data-from="Controller" data-to="Drain">
+      <path d="M 455 108 C 495 108, 495 108, 535 108" class="edge-line" marker-end="url(#arrow)" fill="none" />
+      
+    </g>
+<g class="edge" data-edge-id="e4" data-from="Drain" data-to="Repo">
+      <path d="M 660 108 C 700 108, 700 108, 740 108" class="edge-line" marker-end="url(#arrow)" fill="none" />
+      
+    </g>
+<g class="edge" data-edge-id="e5" data-from="Drain" data-to="Dispatcher">
+      <path d="M 660 108 C 700 108, 700 244, 740 244" class="edge-line" marker-end="url(#arrow)" fill="none" />
+      
+    </g>
+<g class="edge" data-edge-id="e6" data-from="Dispatcher" data-to="WAS">
+      <path d="M 939 244 C 979 244, 979 244, 1019 244" class="edge-line" marker-end="url(#arrow)" fill="none" />
+      
+    </g>
+<g class="edge" data-edge-id="e7" data-from="Dispatcher" data-to="MES">
+      <path d="M 939 244 C 979 244, 979 380, 1019 380" class="edge-line" marker-end="url(#arrow)" fill="none" />
+      
+    </g>
+<g class="edge" data-edge-id="e8" data-from="Dispatcher" data-to="INS">
+      <path d="M 939 244 C 979 244, 979 516, 1019 516" class="edge-line" marker-end="url(#arrow)" fill="none" />
+      
+    </g>
+<g class="edge" data-edge-id="e9" data-from="WAS" data-to="Chat">
+      <path d="M 1181 244 C 1221 244, 1221 312, 1261 312" class="edge-line" marker-end="url(#arrow)" fill="none" />
+      
+    </g>
+<g class="edge" data-edge-id="e10" data-from="Chat" data-to="Msg">
+      <path d="M 1379 312 C 1419 312, 1419 244, 1459 244" class="edge-line" marker-end="url(#arrow)" fill="none" />
+      
+    </g>
+<g class="edge" data-edge-id="e11" data-from="Chat" data-to="AI">
+      <path d="M 1379 312 C 1419 312, 1419 380, 1459 380" class="edge-line" marker-end="url(#arrow)" fill="none" />
+      
+    </g>
+<g class="edge" data-edge-id="e12" data-from="AI" data-to="Graph">
+      <path d="M 1636 380 C 1676 380, 1676 312, 1716 312" class="edge-line" marker-end="url(#arrow)" fill="none" />
+      
+    </g></g>
+  <g class="nodes"><g class="node" data-node-id="Meta" tabindex="0" role="button" aria-label="Meta Webhooks">
+      <rect x="80" y="80" width="133" height="56" rx="10" ry="10" class="node-shape" />
+      <text x="146.5" y="113" class="node-label" text-anchor="middle">Meta Webhooks</text>
+    </g>
+<g class="node" data-node-id="Controller" tabindex="0" role="button" aria-label="WebhookController">
+      <rect x="293" y="80" width="162" height="56" rx="10" ry="10" class="node-shape" />
+      <text x="374" y="113" class="node-label" text-anchor="middle">WebhookController</text>
+    </g>
+<g class="node" data-node-id="Repo" tabindex="0" role="button" aria-label="EventRepository">
+      <rect x="740" y="80" width="199" height="56" rx="10" ry="10" class="node-shape" />
+      <text x="839.5" y="113" class="node-label" text-anchor="middle">EventRepository</text>
+    </g>
+<g class="node" data-node-id="Mongo" tabindex="0" role="button" aria-label="(Mongo · events)">
+      <rect x="1019" y="80" width="162" height="56" rx="10" ry="10" class="node-shape" />
+      <text x="1100" y="113" class="node-label" text-anchor="middle">(Mongo · events)</text>
+    </g>
+<g class="node" data-node-id="Drain" tabindex="0" role="button" aria-label="Drain Worker">
+      <rect x="535" y="80" width="125" height="56" rx="10" ry="10" class="node-shape" />
+      <text x="597.5" y="113" class="node-label" text-anchor="middle">Drain Worker</text>
+    </g>
+<g class="node" data-node-id="Dispatcher" tabindex="0" role="button" aria-label="WebhookEventDispatcher">
+      <rect x="740" y="216" width="199" height="56" rx="10" ry="10" class="node-shape" />
+      <text x="839.5" y="249" class="node-label" text-anchor="middle">WebhookEventDispatcher</text>
+    </g>
+<g class="node" data-node-id="WAS" tabindex="0" role="button" aria-label="WhatsApp Service">
+      <rect x="1019" y="216" width="162" height="56" rx="10" ry="10" class="node-shape" />
+      <text x="1100" y="249" class="node-label" text-anchor="middle">WhatsApp Service</text>
+    </g>
+<g class="node" data-node-id="MES" tabindex="0" role="button" aria-label="Messenger Service">
+      <rect x="1019" y="352" width="162" height="56" rx="10" ry="10" class="node-shape" />
+      <text x="1100" y="385" class="node-label" text-anchor="middle">Messenger Service</text>
+    </g>
+<g class="node" data-node-id="INS" tabindex="0" role="button" aria-label="Instagram noop">
+      <rect x="1019" y="488" width="162" height="56" rx="10" ry="10" class="node-shape" />
+      <text x="1100" y="521" class="node-label" text-anchor="middle">Instagram noop</text>
+    </g>
+<g class="node" data-node-id="Chat" tabindex="0" role="button" aria-label="ChatService">
+      <rect x="1261" y="284" width="118" height="56" rx="10" ry="10" class="node-shape" />
+      <text x="1320" y="317" class="node-label" text-anchor="middle">ChatService</text>
+    </g>
+<g class="node" data-node-id="Msg" tabindex="0" role="button" aria-label="MessageService">
+      <rect x="1459" y="216" width="177" height="56" rx="10" ry="10" class="node-shape" />
+      <text x="1547.5" y="249" class="node-label" text-anchor="middle">MessageService</text>
+    </g>
+<g class="node" data-node-id="AI" tabindex="0" role="button" aria-label="Mastra Orchestrator">
+      <rect x="1459" y="352" width="177" height="56" rx="10" ry="10" class="node-shape" />
+      <text x="1547.5" y="385" class="node-label" text-anchor="middle">Mastra Orchestrator</text>
+    </g>
+<g class="node" data-node-id="Graph" tabindex="0" role="button" aria-label="Graph API">
+      <rect x="1716" y="284" width="110" height="56" rx="10" ry="10" class="node-shape" />
+      <text x="1771" y="317" class="node-label" text-anchor="middle">Graph API</text>
+    </g></g>
+</svg></div>
+      <figcaption class="diagram-meta">
+        <span class="diagram-stat"><span class="num">13</span><span class="lbl">nodes</span></span>
+        <span class="diagram-stat"><span class="num">13</span><span class="lbl">edges</span></span>
+        <span class="diagram-hint">Hover a node to trace connections. Click to focus its path. Click outside to clear.</span>
+      </figcaption>
+    </figure></section>
+<script>(function () {
+  'use strict';
+
+  function $$(sel, root) { return Array.from((root || document).querySelectorAll(sel)); }
+
+  function buildAdjacency(diagram) {
+    var outgoing = {};
+    var incoming = {};
+    $$('.edge', diagram).forEach(function (edge) {
+      var from = edge.getAttribute('data-from');
+      var to = edge.getAttribute('data-to');
+      if (!from || !to) return;
+      (outgoing[from] = outgoing[from] || []).push({ edge: edge, to: to });
+      (incoming[to] = incoming[to] || []).push({ edge: edge, from: from });
+    });
+    return { outgoing: outgoing, incoming: incoming };
+  }
+
+  function clearFocus(diagram) {
+    diagram.classList.remove('has-focus');
+    $$('.node.is-active', diagram).forEach(function (n) { n.classList.remove('is-active'); });
+    $$('.edge.is-active', diagram).forEach(function (e) { e.classList.remove('is-active'); });
+  }
+
+  function focusNode(diagram, nodeId, adj) {
+    clearFocus(diagram);
+    diagram.classList.add('has-focus');
+    var node = diagram.querySelector('.node[data-node-id="' + cssEscape(nodeId) + '"]');
+    if (node) node.classList.add('is-active');
+    (adj.outgoing[nodeId] || []).forEach(function (rel) {
+      rel.edge.classList.add('is-active');
+      var dn = diagram.querySelector('.node[data-node-id="' + cssEscape(rel.to) + '"]');
+      if (dn) dn.classList.add('is-active');
+    });
+    (adj.incoming[nodeId] || []).forEach(function (rel) {
+      rel.edge.classList.add('is-active');
+      var sn = diagram.querySelector('.node[data-node-id="' + cssEscape(rel.from) + '"]');
+      if (sn) sn.classList.add('is-active');
+    });
+  }
+
+  function cssEscape(value) {
+    if (typeof CSS !== 'undefined' && CSS.escape) return CSS.escape(value);
+    return String(value).replace(/[^a-zA-Z0-9_-]/g, function (c) { return '\\' + c; });
+  }
+
+  function wireDiagram(diagram) {
+    var adj = buildAdjacency(diagram);
+    var locked = null;
+
+    $$('.node', diagram).forEach(function (node) {
+      var id = node.getAttribute('data-node-id');
+      node.addEventListener('mouseenter', function () {
+        if (locked) return;
+        focusNode(diagram, id, adj);
+      });
+      node.addEventListener('mouseleave', function () {
+        if (locked) return;
+        clearFocus(diagram);
+      });
+      node.addEventListener('click', function (e) {
+        e.stopPropagation();
+        if (locked === id) {
+          locked = null;
+          clearFocus(diagram);
+        } else {
+          locked = id;
+          focusNode(diagram, id, adj);
+        }
+      });
+      node.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          node.click();
+        }
+      });
+    });
+
+    diagram.addEventListener('click', function () {
+      if (locked) {
+        locked = null;
+        clearFocus(diagram);
+      }
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    $$('.diagram').forEach(wireDiagram);
+  });
+})();
+</script>
+</body>
+</html>

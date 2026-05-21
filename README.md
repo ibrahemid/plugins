@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="https://ibrahemid.github.io/plugins/to-html/">
-    <img src="./plugins/to-html/docs/screenshots/thumb-plan.png" alt="to-html — Claude Code reply rendered as a live plan dashboard" width="900">
+    <img src="./plugins/to-html/docs/screenshots/thumb-diagram.png" alt="to-html — Claude Code reply rendered as an interactive module map" width="900">
   </a>
 </p>
 
@@ -22,7 +22,7 @@
 
 ### [`to-html`](./plugins/to-html) — HTML rendering mode
 
-Toggle with `/to-html`. Every substantive reply is classified and rendered into a self-contained HTML file that opens in the browser. Plans get a live dashboard with focus checkboxes. Comparisons get pickers. Explainers get a TL;DR + TOC. Trivial replies skip.
+Toggle with `/to-html`. Every substantive reply is classified and rendered into a self-contained HTML file that opens in the browser. Plans get a live dashboard. Mermaid diagrams become interactive module maps. Comparisons become pickers. Explainers get a TL;DR + TOC. Prose gets editorial typography with drop cap and roman-numeral sections. Trivial replies skip.
 
 ```
 /plugin install to-html@ibrahemid
