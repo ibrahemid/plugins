@@ -1,18 +1,18 @@
-# sesh
+# plugins
 
-A Claude Code plugin that automatically names your sessions based on conversation context.
-
-## How it works
-
-After 3 user messages, sesh injects a system prompt that asks Claude to generate a concise session name and set it via `claude session name`. It runs silently — no interruption to your workflow.
+Claude Code plugin marketplace.
 
 ## Install
 
-```bash
-/plugin marketplace add ibrahemid/sesh
-/plugin install sesh@pode-plugins
+```
+/plugin marketplace add ibrahemid/plugins
 ```
 
-## License
+## Available
 
-MIT
+| Plugin | Install | What |
+|---|---|---|
+| `to-html` | `/plugin install to-html@ibrahemid` | `/to-html` toggles HTML rendering mode. Each assistant response is written to a self-contained HTML file with rich typography, interactive controls, and native plan-mode integration. |
+| `sesh` | `/plugin install sesh@ibrahemid` | Auto-names Claude Code sessions after a few user messages. |
+
+See each plugin's README for details.

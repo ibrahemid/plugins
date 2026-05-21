@@ -1,1 +1,12 @@
+.DS_Store
 node_modules/
+dist/
+build/
+*.log
+.env
+.env.local
+
+claude-mem/
+
+plugins/*/node_modules/
+plugins/*/dist/
