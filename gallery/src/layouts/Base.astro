@@ -18,37 +18,48 @@ const rootUrl = baseUrl.replace(/\/$/, '') || '/';
   <meta property="og:type" content="website">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300..900;1,300..900&family=JetBrains+Mono:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
   <title>{title}</title>
   <style is:global>
     :root {
-      --paper: #f5efe1;
-      --paper-tint: #ece4d0;
-      --ink: #1f1a14;
-      --ink-muted: #6b6357;
-      --ink-faint: #a89e8a;
-      --rule: #d8cfb8;
-      --rule-soft: #e6dfc9;
-      --accent: #b8742f;
-      --accent-deep: #8a5520;
-      --accent-soft: rgba(184, 116, 47, 0.08);
-      --accent-line: rgba(184, 116, 47, 0.22);
-      --serif: "Crimson Pro", "Iowan Old Style", "Charter", "Georgia", serif;
-      --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      --paper: #fafafa;
+      --paper-tint: #f3f3f1;
+      --paper-sunk: #ededeb;
+      --ink: #0a0a0a;
+      --ink-strong: #000;
+      --ink-muted: #525252;
+      --ink-faint: #a3a3a3;
+      --ink-trace: #d4d4d4;
+      --rule: #e4e4e4;
+      --rule-strong: #c4c4c4;
+      --accent: #c2410c;
+      --accent-deep: #9a3412;
+      --accent-soft: rgba(194, 65, 12, 0.08);
+      --accent-line: rgba(194, 65, 12, 0.22);
+      --terminal-bg: #0c0c0d;
+      --terminal-fg: #ededed;
+      --terminal-prompt: #f59e0b;
+      --sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+      --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
     }
     @media (prefers-color-scheme: dark) {
       :root {
-        --paper: #1a1612;
-        --paper-tint: #221d17;
-        --ink: #ede5d3;
-        --ink-muted: #978c79;
-        --ink-faint: #5e5648;
-        --rule: #2e2820;
-        --rule-soft: #28221c;
-        --accent: #d99752;
-        --accent-deep: #b3742f;
-        --accent-soft: rgba(217, 151, 82, 0.10);
-        --accent-line: rgba(217, 151, 82, 0.28);
+        --paper: #0a0a0a;
+        --paper-tint: #141414;
+        --paper-sunk: #1a1a1a;
+        --ink: #ededed;
+        --ink-strong: #fafafa;
+        --ink-muted: #a3a3a3;
+        --ink-faint: #525252;
+        --ink-trace: #2a2a2a;
+        --rule: #1e1e1e;
+        --rule-strong: #2e2e2e;
+        --accent: #fb923c;
+        --accent-deep: #f97316;
+        --accent-soft: rgba(251, 146, 60, 0.10);
+        --accent-line: rgba(251, 146, 60, 0.28);
+        --terminal-bg: #1a1a1a;
+        --terminal-fg: #ededed;
       }
     }
     * { box-sizing: border-box; }
@@ -57,91 +68,129 @@ const rootUrl = baseUrl.replace(/\/$/, '') || '/';
       margin: 0; padding: 0;
       background: var(--paper);
       color: var(--ink);
-      font-family: var(--serif);
-      font-size: 19px;
-      line-height: 1.6;
+      font-family: var(--sans);
+      font-size: 15px;
+      line-height: 1.55;
       -webkit-font-smoothing: antialiased;
       text-rendering: optimizeLegibility;
-      font-feature-settings: "kern", "liga", "onum";
+      font-feature-settings: "kern", "liga", "tnum", "ss01";
     }
     ::selection { background: var(--accent-soft); color: var(--ink); }
-    a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--accent); transition: color 160ms ease, border-color 160ms ease; }
-    a:hover { color: var(--accent); border-bottom-color: var(--accent-deep); }
-    code, pre { font-family: var(--mono); }
+    a {
+      color: var(--ink);
+      text-decoration: none;
+      border-bottom: 1px solid var(--accent);
+      transition: color 120ms ease, border-color 120ms ease, background 120ms ease;
+    }
+    a:hover { color: var(--accent); }
+    a:focus-visible,
+    button:focus-visible,
+    input:focus-visible,
+    [tabindex]:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 3px;
+      border-radius: 2px;
+    }
+    code, kbd, samp { font-family: var(--mono); font-variant-ligatures: none; }
     code {
       font-size: 0.84em;
-      background: var(--accent-soft);
+      background: var(--paper-sunk);
       padding: 1px 6px;
-      border-radius: 2px;
+      border-radius: 3px;
       color: var(--ink);
-      font-feature-settings: "ss01";
+      border: 1px solid var(--rule);
     }
     pre {
-      background: var(--ink);
-      color: var(--paper);
-      padding: 18px 22px;
+      background: var(--terminal-bg);
+      color: var(--terminal-fg);
+      padding: 18px 20px;
       overflow-x: auto;
-      font-size: 0.82rem;
+      font-size: 0.78rem;
       line-height: 1.7;
-      border-radius: 0;
+      border-radius: 4px;
+      border: 1px solid var(--rule-strong);
       margin: 0;
+      font-feature-settings: "ss01";
     }
-    pre code { background: transparent; color: inherit; padding: 0; }
-    hr { border: none; border-top: 1px solid var(--rule); margin: 64px 0; }
+    pre code {
+      background: transparent;
+      color: inherit;
+      padding: 0;
+      border: 0;
+      font-size: inherit;
+    }
+    hr { border: none; border-top: 1px solid var(--rule); margin: 56px 0; }
 
     .page {
-      max-width: 1200px;
+      max-width: 1180px;
       margin: 0 auto;
-      padding: 32px 48px 96px;
+      padding: 24px 40px 80px;
     }
     .masthead {
       display: flex;
-      align-items: baseline;
+      align-items: center;
       justify-content: space-between;
-      padding: 16px 0 24px;
-      border-bottom: 1px solid var(--ink);
+      padding: 14px 0;
+      border-bottom: 1px solid var(--rule);
       margin-bottom: 80px;
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      letter-spacing: 0.02em;
+    }
+    .masthead .left { display: flex; gap: 6px; align-items: center; color: var(--ink-muted); }
+    .masthead .nameplate {
+      font-family: var(--mono);
+      font-weight: 600;
+      color: var(--ink);
+      letter-spacing: 0;
+    }
+    .masthead .slash { color: var(--ink-faint); padding: 0 4px; }
+    .masthead .ver { color: var(--ink-muted); }
+    .masthead nav { display: flex; gap: 18px; }
+    .masthead nav a {
+      border-bottom: none;
+      color: var(--ink-muted);
+      font-family: var(--mono);
+      letter-spacing: 0.02em;
+    }
+    .masthead nav a:hover { color: var(--accent); }
+
+    .section-label {
+      display: grid;
+      grid-template-columns: max-content 1fr;
+      align-items: center;
+      gap: 18px;
+      margin: 80px 0 32px;
       font-family: var(--mono);
       font-size: 0.72rem;
       letter-spacing: 0.14em;
       text-transform: uppercase;
-      color: var(--ink);
+      color: var(--ink-muted);
     }
-    .masthead .left { display: flex; gap: 28px; align-items: baseline; }
-    .masthead .nameplate {
-      font-family: var(--serif);
-      font-weight: 600;
-      font-size: 1.05rem;
-      letter-spacing: 0;
-      text-transform: none;
+    .section-label::after {
+      content: "";
+      border-top: 1px solid var(--rule);
+      display: block;
     }
-    .masthead .vol { color: var(--ink-muted); }
-    .masthead nav { display: flex; gap: 22px; }
-    .masthead nav a { border-bottom: none; color: var(--ink-muted); }
-    .masthead nav a:hover { color: var(--accent); }
 
     .colophon {
       margin-top: 96px;
-      padding-top: 18px;
+      padding-top: 16px;
       border-top: 1px solid var(--rule);
       font-family: var(--mono);
-      font-size: 0.7rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
+      font-size: 0.72rem;
       color: var(--ink-faint);
       display: flex;
       justify-content: space-between;
       flex-wrap: wrap;
-      gap: 16px;
+      gap: 12px;
     }
     .colophon a { border-bottom: none; color: var(--ink-muted); }
     .colophon a:hover { color: var(--accent); }
 
     @media (max-width: 720px) {
-      html, body { font-size: 17px; }
       .page { padding: 16px 22px 64px; }
-      .masthead { flex-direction: column; gap: 12px; align-items: flex-start; margin-bottom: 56px; }
-      .masthead .left { flex-direction: column; gap: 4px; }
+      .masthead { flex-direction: column; gap: 10px; align-items: flex-start; margin-bottom: 48px; }
     }
   </style>
 </head>
@@ -149,19 +198,21 @@ const rootUrl = baseUrl.replace(/\/$/, '') || '/';
   <div class="page">
     <header class="masthead">
       <div class="left">
-        <span class="nameplate"><a href={rootUrl} style="border-bottom:none;color:var(--ink);">plugins</a></span>
-        <span class="vol">Vol. 1 · Claude Code</span>
+        <span class="nameplate"><a href={rootUrl} style="border-bottom:none;color:var(--ink);">ibrahemid/plugins</a></span>
+        <span class="slash">·</span>
+        <span class="ver">claude-code · MIT</span>
       </div>
       <nav>
-        <a href={rootUrl}>Index</a>
-        <a href="https://github.com/ibrahemid/plugins">Source</a>
-        <a href="https://github.com/ibrahemid/plugins/issues">Issues</a>
+        <a href={rootUrl}>index</a>
+        <a href="https://github.com/ibrahemid/plugins">source</a>
+        <a href="https://github.com/ibrahemid/plugins/blob/main/plugins/to-html/CHANGELOG.md">changelog</a>
+        <a href="https://github.com/ibrahemid/plugins/issues">issues</a>
       </nav>
     </header>
     <main><slot /></main>
     <footer class="colophon">
-      <span>MIT · No telemetry · No deps</span>
-      <span>Set in Crimson Pro &amp; JetBrains Mono</span>
+      <span>Built with Astro. Plain HTML, no JS framework on the page.</span>
+      <span>v0.1 · {new Date().getUTCFullYear()}</span>
     </footer>
   </div>
 </body>

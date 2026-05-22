@@ -25,6 +25,7 @@ function copyScreenshots() {
   let count = 0;
   for (const file of fs.readdirSync(SHOT_SRC)) {
     if (!/\.(png|jpg|jpeg|webp|gif|svg)$/i.test(file)) continue;
+    if (file.startsWith('tpl-')) continue;
     fs.copyFileSync(path.join(SHOT_SRC, file), path.join(SHOT_DEST, file));
     count += 1;
   }
