@@ -5,8 +5,7 @@ const fs = require('fs');
 const path = require('path');
 
 const PLUGIN_ROOT = path.join(__dirname, '..', '..', 'plugins', 'to-html');
-const { classify } = require(path.join(PLUGIN_ROOT, 'lib', 'classifier'));
-const { dispatchRender } = require(path.join(PLUGIN_ROOT, 'lib', 'templates', 'dispatch'));
+const { composeArtifact } = require(path.join(PLUGIN_ROOT, 'lib', 'compose'));
 
 const DEST = path.join(__dirname, '..', 'public', 'examples', 'to-html');
 const SHOT_SRC = path.join(PLUGIN_ROOT, 'docs', 'screenshots');
@@ -45,21 +44,18 @@ function main() {
 
   for (const c of cases) {
     const md = load(c.file);
-    const cls = classify(md);
-    if (cls.template === 'skip') {
+    const artifact = composeArtifact({
+      markdown: md,
+      meta: { turnIndex: 0, sessionId: c.name, project: 'gallery' },
+      uiDefaults: c.ui || null
+    });
+    if (artifact.skipped) {
       console.log('[!] ' + c.name + ' skipped by classifier');
       continue;
     }
-    const rendered = dispatchRender({
-      template: cls.template,
-      markdown: cls.source || md,
-      meta: { turnIndex: 0, sessionId: c.name, project: 'gallery' },
-      signals: cls.signals,
-      override: cls.override
-    });
     const out = path.join(DEST, c.name + '.html');
-    fs.writeFileSync(out, rendered.html);
-    console.log('✓ ' + c.name + ' → ' + path.relative(process.cwd(), out) + ' (' + rendered.html.length + ' bytes, template=' + cls.template + ')');
+    fs.writeFileSync(out, artifact.html);
+    console.log('✓ ' + c.name + ' → ' + path.relative(process.cwd(), out) + ' (' + artifact.html.length + ' bytes, template=' + artifact.template + ', tldr=' + artifact.hasTldr + ', graph=' + artifact.hasGraph + ')');
   }
 
   const shotCount = copyScreenshots();

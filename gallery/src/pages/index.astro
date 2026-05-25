@@ -7,16 +7,16 @@ const plugins = [
     n: '01',
     name: 'to-html',
     href: `${baseUrl}/to-html`,
-    tag: 'HTML rendering mode',
-    pitch: 'Toggle on. Every substantive reply is classified and rendered to a self-contained HTML file that opens in the browser. Mermaid blocks become interactive module maps. Plans become live dashboards. Comparisons become pickers. Trivial replies skip.',
+    tag: 'understanding view',
+    pitch: 'Toggle on. Substantive replies render to a self-contained page with a TL;DR band, an interactive concept map from mermaid blocks, and a body set for reading. Plans get a phase sidebar; comparisons get pickers. Quiet by default: short or flat replies render nothing.',
     install: '/plugin install to-html@ibrahemid',
     facts: [
-      ['surface', 'skill + Stop hook + PostToolUse hook'],
-      ['templates', '6 — diagram, plan, comparison, explainer, prose, skip'],
+      ['surface', 'skill + Stop + UserPromptSubmit + PostToolUse hooks'],
+      ['artifact', 'TL;DR · concept map · stepper · search · settings'],
       ['runtime', 'Node 18+. No npm install. Vendored marked.'],
-      ['tests', '64 cases via node --test']
+      ['tests', '102 cases via node --test']
     ],
-    cover: `${baseUrl}/screenshots/thumb-diagram.png`
+    cover: `${baseUrl}/screenshots/understanding-map-light.png`
   },
   {
     n: '02',
@@ -37,10 +37,10 @@ const plugins = [
 <Base title="ibrahemid/plugins" description="Claude Code plugins. Render agent replies as HTML artifacts.">
 
   <section class="hero">
-    <h1 class="head">Render agent replies<br>as HTML&nbsp;artifacts.</h1>
+    <h1 class="head">Render agent output<br>as&nbsp;HTML.</h1>
     <p class="dek">
-      A Claude Code plugin workspace. Every substantive reply is classified server-side and rendered into a self-contained HTML file
-      — six templates, deterministic Node, no npm install. Two plugins, MIT, install in one line.
+      A Claude Code plugin workspace. Substantive replies are classified server-side and rendered into a self-contained page
+      with a TL;DR, an interactive concept map, and reading-first type. Deterministic Node, no npm install. Two plugins, MIT.
     </p>
 
     <div class="install">
@@ -73,7 +73,7 @@ const plugins = [
               <button type="button" class="copy small" data-clip={p.install} aria-label={`Copy install command for ${p.name}`}>copy</button>
             </div>
             {p.href.startsWith(baseUrl) && (
-              <p class="entry-cta"><a href={p.href}>read the specimen sheet →</a></p>
+              <p class="entry-cta"><a href={p.href}>details →</a></p>
             )}
           </div>
           <aside class="entry-facts" aria-label={`${p.name} facts`}>
@@ -97,21 +97,18 @@ const plugins = [
     ))}
   </section>
 
-  <div class="section-label"><span>02 / rationale</span></div>
+  <div class="section-label"><span>02 / how it works</span></div>
 
   <section class="rationale">
     <p>
-      Thariq Shihipar wrote <em>The Unreasonable Effectiveness of HTML</em>: markdown flattens what the agent wants to express.
-      Tables get linearized. Comparisons become bullet lists. Mockups become ASCII.
-    </p>
-    <p>
-      <code>to-html</code> takes that seriously without forcing it on every reply. The Stop hook quietly decides which template
-      fits each turn. Plans get a phase sidebar with live status. Comparisons get pickers. Explainers get a TOC. Trivial replies
-      are left alone — the goal is fewer artifacts, not more.
+      Markdown in a terminal flattens structure: tables linearize, comparisons become bullet lists. Each artifact leads with
+      the reply's TL;DR, turns a mermaid block into a concept map you can click through to the matching section, and sets the
+      body for reading. Plans get a phase sidebar with live status; comparisons get pickers. Replies without structure render
+      nothing.
     </p>
     <p>
       The renderer is deterministic Node. Claude never writes HTML, so token cost stays at markdown cost. Every artifact ships
-      with a strict CSP — no network, no remote assets, no forms.
+      with a strict CSP: no network, no remote assets, no forms.
     </p>
   </section>
 

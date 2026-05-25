@@ -4,72 +4,61 @@ const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, '') || '';
 const shots = `${baseUrl}/screenshots`;
 const examples = `${baseUrl}/examples/to-html`;
 
-const templates = [
+const parts = [
   {
-    id: 'diagram',
+    id: 'tldr',
     n: '01',
-    name: 'diagram',
-    tag: 'interactive module map · hover to trace · click to focus',
-    trigger: '```mermaid block with graph TD or graph LR',
-    body: 'Mermaid graph syntax is parsed server-side, laid out topologically, and rendered as pure SVG. Hover a node to dim the rest and trace its callers and callees; click to lock the focus. No mermaid runtime — the diagram ships as plain SVG inside the artifact.',
-    thumb: `${shots}/thumb-diagram.png`,
-    live: `${examples}/diagram.html`,
-    decision: 'Hover and click to explore. Open the live artifact for the full interaction.'
+    name: 'TL;DR band',
+    tag: 'the summary the reply led with, hoisted to the top',
+    body: 'When a reply opens with a TL;DR line, it is lifted into a band above everything else. It is never synthesized from the first sentence; if the reply has no summary, the band is absent. A UserPromptSubmit hook reminds the model to supply one while mode is on.',
+    live: `${examples}/explainer.html`
   },
   {
-    id: 'plan',
+    id: 'map',
     n: '02',
+    name: 'Concept map',
+    tag: 'mermaid → interactive SVG · click a node to find its section',
+    body: 'A mermaid graph in the reply becomes a pure-SVG map. Hover a node to trace its edges; click to scroll to the matching section and open a detail panel; drag to pan; scroll or +/-/0 to zoom. No mermaid runtime; the map ships inside the artifact. No graph in the reply? A table-of-contents rail takes its place instead of a fabricated one.',
+    live: `${examples}/diagram.html`
+  },
+  {
+    id: 'reading',
+    n: '03',
+    name: 'Reading body',
+    tag: '18px · 66ch · system sans · high contrast',
+    body: 'Body type set for screen reading: 18px, 66ch measure, system sans. No drop cap, no roman-numeral sections, no all-small-caps. A reading-order stepper walks the sections (j / k), in-page search filters them (/), and a settings gear controls theme, size, width, and font.',
+    live: `${examples}/prose.html`
+  }
+];
+
+const decisions = [
+  {
+    id: 'plan',
+    n: '04',
     name: 'plan',
     tag: 'phase sidebar · live status · focus checkboxes',
-    trigger: '## Phase N: headings or three-plus [ ] tasks',
-    body: 'Phase sidebar with progress bars, status badges per task (◯ pending · ◐ in-progress · ● done · ✕ failed), and a meta-refresh that re-renders every three seconds. As Claude reports task progress in plain English, the Stop hook diffs the reply and flips statuses live.',
-    thumb: `${shots}/thumb-plan.png`,
-    live: `${examples}/plan.html`,
-    decision: 'Tick the tasks you want focused next. Copy as prompt emits only those — never the whole plan.'
+    body: 'Phase sidebar with progress, status per task (◯ pending · ◐ in-progress · ● done · ✕ failed), and a meta-refresh that re-renders as Claude reports progress. Tick the tasks to focus next; Copy as prompt emits only those.',
+    live: `${examples}/plan.html`
   },
   {
     id: 'comparison',
-    n: '03',
+    n: '05',
     name: 'comparison',
     tag: 'side-by-side · pros / cons · pick + reason',
-    trigger: 'Two or three ## Option / Approach / Variant headings',
-    body: 'Side-by-side cards. Pros and cons are detected and pulled into their own colored panels. An effort meter and a "recommended" badge appear when Claude marks them.',
-    thumb: `${shots}/thumb-comparison.png`,
-    live: `${examples}/comparison.html`,
-    decision: 'Click a card to pick. Type a one-line reason. Copy as prompt emits the choice and the reason.'
-  },
-  {
-    id: 'explainer',
-    n: '04',
-    name: 'explainer',
-    tag: 'TL;DR pill · sticky TOC',
-    trigger: 'TL;DR keyword or multi-section structure without heavy bulleting',
-    body: 'For "explain X" replies. TL;DR pill at the top, a sticky table of contents on the side, the body sized for actual reading. No decision bar — this template is for understanding, not deciding.',
-    thumb: `${shots}/thumb-explainer.png`,
-    live: `${examples}/explainer.html`,
-    decision: 'Read-only.'
-  },
-  {
-    id: 'prose',
-    n: '05',
-    name: 'prose',
-    tag: 'editorial typography · drop cap · roman-numeral sections',
-    trigger: 'Anything substantive that doesn\'t match another template',
-    body: 'The fallback for general prose. Iowan Old Style with old-style numerals, ochre drop cap, Roman-numeral section markers in the left margin, asterism between sections, ❦ end mark — this is the one template that does lean editorial, because reading the agent\'s notes is what prose is for.',
-    thumb: `${shots}/thumb-prose.png`,
-    live: `${examples}/prose.html`,
-    decision: 'Read-only.'
+    body: 'Side-by-side cards with pros and cons pulled into colored panels and a recommended badge when Claude marks one. Pick a card, add a one-line reason; Copy as prompt emits the choice and the reason, never the whole comparison.',
+    live: `${examples}/comparison.html`
   }
 ];
 ---
-<Base title="to-html — specimen sheet" description="Six templates, one toggle. Live interactive examples of to-html.">
+<Base title="to-html" description="HTML rendering for Claude Code: TL;DR, an interactive concept map, and reading-first typography. Quiet by default.">
 
   <section class="hero">
-    <p class="kicker">to-html · specimen sheet</p>
-    <h1 class="head">Six templates.<br>One&nbsp;toggle.</h1>
+    <p class="kicker">to-html</p>
+    <h1 class="head">Render Claude Code<br>output as&nbsp;HTML.</h1>
     <p class="dek">
-      Type <code>/to-html</code> once. Every substantive reply is classified server-side and rendered into the template that fits the
-      content. Click any preview to interact with the real artifact — these are the same HTML files the plugin produces on disk.
+      Type <code>/to-html</code> once. Substantive replies render into one self-contained page with a TL;DR band, an
+      interactive concept map, and a body set for reading. Quiet by default: short or flat replies render nothing, and
+      nothing opens a browser tab unless you turn auto-open on.
     </p>
 
     <div class="install">
@@ -86,31 +75,15 @@ const templates = [
     </div>
   </section>
 
-  <div class="section-label"><span>01 / index</span></div>
+  <a class="hero-shot" href={`${examples}/diagram.html`} target="_blank" rel="noopener" aria-label="Open a live concept-map artifact">
+    <img src={`${shots}/understanding-map-light.png`} alt="to-html artifact: TL;DR band, concept map, reading body" loading="eager" width="2560" height="1760">
+    <span class="hero-shot-overlay">open live →</span>
+  </a>
 
-  <nav class="toc" aria-label="Templates">
-    <ol>
-      {templates.map((t) => (
-        <li>
-          <a href={`#${t.id}`}>
-            <span class="toc-n">{t.n}</span>
-            <span class="toc-name">{t.name}</span>
-            <span class="toc-tag">{t.tag}</span>
-          </a>
-        </li>
-      ))}
-      <li class="toc-skip">
-        <span class="toc-n">06</span>
-        <span class="toc-name">skip</span>
-        <span class="toc-tag">under 240 chars, no structure — no artifact at all</span>
-      </li>
-    </ol>
-  </nav>
-
-  <div class="section-label"><span>02 / templates</span></div>
+  <div class="section-label"><span>01 / anatomy</span></div>
 
   <section class="specimens">
-    {templates.map((t) => (
+    {parts.map((t) => (
       <article id={t.id} class="spec">
         <header class="spec-head">
           <span class="spec-n">{t.n}</span>
@@ -119,44 +92,58 @@ const templates = [
             <h2 class="spec-name">{t.name}</h2>
           </div>
         </header>
-
         <div class="spec-grid">
           <div class="spec-meta">
-            <dl>
-              <dt>triggers on</dt>
-              <dd><code>{t.trigger}</code></dd>
-              <dt>interaction</dt>
-              <dd>{t.decision}</dd>
-            </dl>
-            <p class="spec-actions">
-              <a href={t.live} target="_blank" rel="noopener">open live artifact →</a>
-            </p>
+            <p class="spec-actions"><a href={t.live} target="_blank" rel="noopener">open live artifact →</a></p>
           </div>
-          <div class="spec-body">
-            <p>{t.body}</p>
-          </div>
+          <div class="spec-body"><p>{t.body}</p></div>
         </div>
-
-        <a class="spec-shot" href={t.live} target="_blank" rel="noopener" aria-label={`Open ${t.name} live`}>
-          <img src={t.thumb} alt={`${t.name} preview`} loading="lazy" width="2880" height="1800">
-          <span class="spec-shot-overlay">open live →</span>
-        </a>
       </article>
     ))}
   </section>
 
-  <div class="section-label"><span>03 / override</span></div>
+  <div class="section-label"><span>02 / decision tools</span></div>
+
+  <section class="specimens">
+    {decisions.map((t) => (
+      <article id={t.id} class="spec">
+        <header class="spec-head">
+          <span class="spec-n">{t.n}</span>
+          <div>
+            <p class="spec-tag">{t.tag}</p>
+            <h2 class="spec-name">{t.name}</h2>
+          </div>
+        </header>
+        <div class="spec-grid">
+          <div class="spec-meta">
+            <p class="spec-actions"><a href={t.live} target="_blank" rel="noopener">open live artifact →</a></p>
+          </div>
+          <div class="spec-body"><p>{t.body}</p></div>
+        </div>
+      </article>
+    ))}
+  </section>
+
+  <div class="section-label"><span>03 / quiet by default</span></div>
 
   <section class="appendix">
     <p>
-      If the classifier picks wrong, force a template by prepending a fenced block to a reply:
+      Toggling on does not open a browser tab. The artifact is written and a <code>file://</code> link is printed; you
+      open it when you want it. A reply renders only when it carries structure: 600+ chars, or 2+ headings, a code block,
+      a table, checkboxes, or a graph. A manual <code>/to-html</code> toggle always renders the reply you were looking at.
+    </p>
+    <p>Set durable defaults per project:</p>
+<pre>{`/to-html config auto-open  yes | no
+/to-html config theme      auto | light | dark | sepia
+/to-html config size       s | m | l | xl
+/to-html config width      narrow | comfortable | wide
+/to-html config font       sans | serif`}</pre>
+    <p>
+      Force a template from any reply by prepending a fenced block. Unknown templates fall back to the classifier; skip is rejected.
     </p>
 <pre>{`\`\`\`to-html
-{"template":"comparison","title":"Three approaches"}
+{"template":"diagram","title":"Auth handshake"}
 \`\`\``}</pre>
-    <p>
-      Unknown templates fall back to the classifier. Skip is rejected — refusal disguised as override.
-    </p>
   </section>
 
   <script>
@@ -187,7 +174,7 @@ const templates = [
 </Base>
 
 <style>
-  .hero { margin: 0 0 64px; }
+  .hero { margin: 0 0 40px; }
   .kicker {
     font-family: var(--mono);
     font-size: 0.72rem;
@@ -244,49 +231,36 @@ const templates = [
   }
   .install-row .copy:hover { opacity: 0.85; }
 
-  .toc ol {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    border-top: 1px solid var(--rule);
+  .hero-shot {
+    display: block;
+    margin: 0 0 8px;
+    border: 1px solid var(--rule);
+    background: var(--paper-tint);
+    position: relative;
+    overflow: hidden;
+    border-radius: 6px;
+    transition: border-color 200ms ease;
   }
-  .toc li { border-bottom: 1px solid var(--rule); }
-  .toc a, .toc .toc-skip {
-    display: grid;
-    grid-template-columns: 56px 200px 1fr;
-    gap: 16px;
-    align-items: center;
-    padding: 14px 0;
-    color: var(--ink);
-    border-bottom: none;
-    transition: background 120ms ease;
-  }
-  .toc a:hover { background: var(--paper-tint); color: var(--ink); }
-  .toc a:hover .toc-name { color: var(--accent); }
-  .toc-n {
+  .hero-shot:hover { border-color: var(--accent); }
+  .hero-shot img { display: block; width: 100%; height: auto; }
+  .hero-shot-overlay {
+    position: absolute;
+    bottom: 14px;
+    right: 14px;
+    background: var(--ink);
+    color: var(--paper);
+    padding: 6px 12px;
     font-family: var(--mono);
-    color: var(--ink-faint);
-    font-size: 0.78rem;
-    font-variant-numeric: tabular-nums;
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    border-radius: 3px;
+    transform: translateY(4px);
+    opacity: 0;
+    transition: transform 200ms ease, opacity 200ms ease;
   }
-  .toc-name {
-    font-family: var(--mono);
-    font-weight: 600;
-    font-size: 1rem;
-    color: var(--ink);
-  }
-  .toc-tag {
-    font-family: var(--mono);
-    font-size: 0.78rem;
-    color: var(--ink-muted);
-  }
-  .toc-skip { color: var(--ink-faint); }
-  .toc-skip .toc-name { color: var(--ink-faint); }
+  .hero-shot:hover .hero-shot-overlay { transform: translateY(0); opacity: 1; }
 
   .specimens { display: flex; flex-direction: column; gap: 56px; }
-
   .spec { margin: 0; }
   .spec-head {
     display: grid;
@@ -329,71 +303,14 @@ const templates = [
     align-items: start;
     padding-left: 92px;
   }
-  .spec-meta dl {
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    font-family: var(--mono);
-    font-size: 0.78rem;
-    line-height: 1.5;
-  }
-  .spec-meta dt {
-    color: var(--ink-faint);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    font-size: 0.66rem;
-    margin: 0;
-  }
-  .spec-meta dd { margin: 0; color: var(--ink-muted); }
-  .spec-meta dd code { font-size: 0.86em; }
-
-  .spec-actions {
-    margin: 20px 0 0;
-    font-family: var(--mono);
-    font-size: 0.78rem;
-  }
+  .spec-actions { margin: 0; font-family: var(--mono); font-size: 0.78rem; }
   .spec-actions a { color: var(--accent); border-bottom-color: var(--accent-line); }
-
   .spec-body p {
     margin: 0;
     font-size: 1rem;
     line-height: 1.6;
     color: var(--ink);
     max-width: 56ch;
-  }
-
-  .spec-shot {
-    display: block;
-    margin: 32px 0 0 92px;
-    border: 1px solid var(--rule);
-    background: var(--paper-tint);
-    position: relative;
-    overflow: hidden;
-    border-bottom: 1px solid var(--rule);
-    border-radius: 4px;
-    transition: border-color 200ms ease;
-  }
-  .spec-shot:hover { border-color: var(--accent); }
-  .spec-shot img { display: block; width: 100%; height: auto; }
-  .spec-shot-overlay {
-    position: absolute;
-    bottom: 14px;
-    right: 14px;
-    background: var(--ink);
-    color: var(--paper);
-    padding: 6px 12px;
-    font-family: var(--mono);
-    font-size: 0.7rem;
-    letter-spacing: 0.06em;
-    border-radius: 3px;
-    transform: translateY(4px);
-    opacity: 0;
-    transition: transform 200ms ease, opacity 200ms ease;
-  }
-  .spec-shot:hover .spec-shot-overlay {
-    transform: translateY(0);
-    opacity: 1;
   }
 
   .appendix { max-width: 720px; }
@@ -408,10 +325,7 @@ const templates = [
 
   @media (max-width: 960px) {
     .spec-grid { grid-template-columns: 1fr; gap: 20px; padding-left: 0; }
-    .spec-shot { margin-left: 0; }
     .spec-head { grid-template-columns: 48px 1fr; gap: 14px; }
     .spec-n { font-size: 1.875rem; }
-    .toc a, .toc .toc-skip { grid-template-columns: 40px 1fr; grid-template-rows: auto auto; }
-    .toc-tag { grid-column: 2; }
   }
 </style>
