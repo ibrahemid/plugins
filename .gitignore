@@ -15,6 +15,7 @@ claude-mem/
 
 plugins/*/node_modules/
 plugins/*/dist/
+plugins/*/coverage/
 
 gallery/node_modules/
 gallery/dist/
