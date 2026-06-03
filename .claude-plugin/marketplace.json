@@ -14,14 +14,15 @@
       "version": "2.0.3",
       "source": "./plugins/to-html",
       "description": "HTML rendering for Claude Code. `/to-html` toggles it on; substantive replies render as a self-contained artifact with a TL;DR, a concept map (mermaid to SVG with click-to-section, zoom, pan), a reading-order stepper, in-page search, and a settings gear. Quiet by default.",
-      "keywords": ["html", "output", "rendering", "artifact", "graph", "tldr", "comprehension"]
-    },
-    {
-      "name": "sesh",
-      "version": "1.0.1",
-      "source": "./plugins/sesh",
-      "description": "Auto-names Claude Code sessions based on conversation context. Silent UserPromptSubmit hook that injects a one-time naming instruction after a few user messages.",
-      "keywords": ["session", "naming", "auto-name", "ux"]
+      "keywords": [
+        "html",
+        "output",
+        "rendering",
+        "artifact",
+        "graph",
+        "tldr",
+        "comprehension"
+      ]
     }
   ]
 }
