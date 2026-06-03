@@ -11,7 +11,7 @@
   "plugins": [
     {
       "name": "to-html",
-      "version": "2.1.1",
+      "version": "2.1.2",
       "description": "HTML rendering for Claude Code. /to-html toggles it on; the model writes naturally and a detached enrichment call derives a TL;DR + concept map. Renders into a live per-session preview timeline plus per-turn self-contained archive artifacts.",
       "keywords": [
         "html",
@@ -26,7 +26,7 @@
         "source": "git-subdir",
         "url": "https://github.com/ibrahemid/to-html.git",
         "path": "adapters/claude-code",
-        "ref": "v2.1.1"
+        "ref": "v2.1.2"
       }
     }
   ]
