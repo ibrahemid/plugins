@@ -11,9 +11,8 @@
   "plugins": [
     {
       "name": "to-html",
-      "version": "2.0.3",
-      "source": "./plugins/to-html",
-      "description": "HTML rendering for Claude Code. `/to-html` toggles it on; substantive replies render as a self-contained artifact with a TL;DR, a concept map (mermaid to SVG with click-to-section, zoom, pan), a reading-order stepper, in-page search, and a settings gear. Quiet by default.",
+      "version": "2.1.0",
+      "description": "HTML rendering for Claude Code. /to-html toggles it on; the model writes naturally and a detached enrichment call derives a TL;DR + concept map. Renders into a live per-session preview timeline plus per-turn self-contained archive artifacts.",
       "keywords": [
         "html",
         "output",
@@ -22,7 +21,13 @@
         "graph",
         "tldr",
         "comprehension"
-      ]
+      ],
+      "source": {
+        "source": "git-subdir",
+        "url": "ibrahemid/to-html",
+        "path": "adapters/claude-code",
+        "ref": "v2.1.0"
+      }
     }
   ]
 }
