@@ -24,7 +24,7 @@
       ],
       "source": {
         "source": "git-subdir",
-        "url": "ibrahemid/to-html",
+        "url": "https://github.com/ibrahemid/to-html.git",
         "path": "adapters/claude-code",
         "ref": "v2.1.0"
       }
