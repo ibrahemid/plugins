@@ -1,3 +1,8 @@
+> [!NOTE]
+> **This repository is archived and superseded.** `to-html` now lives at
+> **[github.com/ibrahemid/to-html](https://github.com/ibrahemid/to-html)** and installs from its own marketplace:
+> `/plugin marketplace add ibrahemid/to-html`. The content below is historical and no longer maintained.
+
 <h1 align="center">plugins</h1>
 
 <p align="center">Claude Code plugins. <a href="https://ibrahemid.github.io/plugins/">Live gallery</a></p>
